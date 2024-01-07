@@ -60,7 +60,7 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	app.reply.OK(w, reply.Options{
 		Template: "home.html",
 		Invoke:   "base",
-		Data: struct { Users []database.Users }{ Users: users },
+		Data: struct{ Users []database.Users }{Users: users},
 	})
 }
 ```
