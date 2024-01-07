@@ -21,10 +21,9 @@ package main
 
 import (
 	"fmt"
-	"log/slog"
 	"net/http"
 
-	"github.com/yourusername/yourpackage/internal/database" 
+	"github.com/novrin/reply/internal/database" 
 	"github.com/novrin/reply"
 )
 
