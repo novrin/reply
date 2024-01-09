@@ -20,9 +20,9 @@ func (tw TemplateWriter) Error(w http.ResponseWriter, statusCode int) {
 }
 
 // Options represents fields used in Write.
-//   - Template defines the lookup in an Engine's Templates map
+//   - Template defines an optional lookup in an TemplateWriter's Templates
 //   - Invoke defines an optional named template to invoke
-//   - Data defines the data for use in a template
+//   - Data defines the data for use in a template or JSON output
 type Options struct {
 	Template string
 	Invoke   string
