@@ -14,10 +14,15 @@ func TestBadRequest(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
-		"template engine": {
+		"template writer": {
 			reply:    Engine{TemplateWriter{}},
 			wantCode: http.StatusBadRequest,
 			wantBody: http.StatusText(http.StatusBadRequest),
+		},
+		"json writer": {
+			reply:    Engine{JSONWriter{}},
+			wantCode: http.StatusBadRequest,
+			wantBody: `{"error":"Bad Request"}`,
 		},
 	}
 	for name, c := range cases {
@@ -40,10 +45,15 @@ func TestUnauthorized(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
-		"template engine": {
+		"template writer": {
 			reply:    Engine{TemplateWriter{}},
 			wantCode: http.StatusUnauthorized,
 			wantBody: http.StatusText(http.StatusUnauthorized),
+		},
+		"json writer": {
+			reply:    Engine{JSONWriter{}},
+			wantCode: http.StatusUnauthorized,
+			wantBody: `{"error":"Unauthorized"}`,
 		},
 	}
 	for name, c := range cases {
@@ -66,10 +76,15 @@ func TestForbidden(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
-		"template engine": {
+		"template writer": {
 			reply:    Engine{TemplateWriter{}},
 			wantCode: http.StatusForbidden,
 			wantBody: http.StatusText(http.StatusForbidden),
+		},
+		"json writer": {
+			reply:    Engine{JSONWriter{}},
+			wantCode: http.StatusForbidden,
+			wantBody: `{"error":"Forbidden"}`,
 		},
 	}
 	for name, c := range cases {
@@ -92,10 +107,15 @@ func TestNotFound(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
-		"template engine": {
+		"template writer": {
 			reply:    Engine{TemplateWriter{}},
 			wantCode: http.StatusNotFound,
 			wantBody: http.StatusText(http.StatusNotFound),
+		},
+		"json writer": {
+			reply:    Engine{JSONWriter{}},
+			wantCode: http.StatusNotFound,
+			wantBody: `{"error":"Not Found"}`,
 		},
 	}
 	for name, c := range cases {
@@ -120,18 +140,32 @@ func TestMethodNotAllowed(t *testing.T) {
 		wantBody  string
 		wantAllow string
 	}{
-		"template engine; allow one": {
+		"template writer; allow one": {
 			reply:     Engine{TemplateWriter{}},
 			allow:     []string{http.MethodGet},
 			wantCode:  http.StatusMethodNotAllowed,
 			wantBody:  http.StatusText(http.StatusMethodNotAllowed),
 			wantAllow: http.MethodGet,
 		},
-		"template engine; allow multiple": {
+		"template writer; allow multiple": {
 			reply:     Engine{TemplateWriter{}},
 			allow:     []string{http.MethodGet, http.MethodPost},
 			wantCode:  http.StatusMethodNotAllowed,
 			wantBody:  http.StatusText(http.StatusMethodNotAllowed),
+			wantAllow: strings.Join([]string{http.MethodGet, http.MethodPost}, ", "),
+		},
+		"json writer; allow one": {
+			reply:     Engine{JSONWriter{}},
+			allow:     []string{http.MethodGet},
+			wantCode:  http.StatusMethodNotAllowed,
+			wantBody:  `{"error":"Method Not Allowed"}`,
+			wantAllow: http.MethodGet,
+		},
+		"json writer; allow multiple": {
+			reply:     Engine{JSONWriter{}},
+			allow:     []string{http.MethodGet, http.MethodPost},
+			wantCode:  http.StatusMethodNotAllowed,
+			wantBody:  `{"error":"Method Not Allowed"}`,
 			wantAllow: strings.Join([]string{http.MethodGet, http.MethodPost}, ", "),
 		},
 	}
@@ -158,10 +192,15 @@ func TestInternalServerError(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
-		"template engine": {
+		"template writer": {
 			reply:    Engine{TemplateWriter{}},
 			wantCode: http.StatusInternalServerError,
 			wantBody: http.StatusText(http.StatusInternalServerError),
+		},
+		"json writer": {
+			reply:    Engine{JSONWriter{}},
+			wantCode: http.StatusInternalServerError,
+			wantBody: `{"error":"Internal Server Error"}`,
 		},
 	}
 	for name, c := range cases {
@@ -184,10 +223,15 @@ func TestOK(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
-		"template engine": {
+		"template writer": {
 			reply:    Engine{TemplateWriter{}},
 			wantCode: http.StatusOK,
 			wantBody: "",
+		},
+		"json writer": {
+			reply:    Engine{JSONWriter{}},
+			wantCode: http.StatusOK,
+			wantBody: "null",
 		},
 	}
 	for name, c := range cases {
@@ -210,10 +254,15 @@ func TestCreated(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
-		"template engine": {
+		"template writer": {
 			reply:    Engine{TemplateWriter{}},
 			wantCode: http.StatusCreated,
 			wantBody: "",
+		},
+		"json writer": {
+			reply:    Engine{JSONWriter{}},
+			wantCode: http.StatusCreated,
+			wantBody: "null",
 		},
 	}
 	for name, c := range cases {
@@ -236,10 +285,15 @@ func TestNoContent(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
-		"template engine": {
+		"template writer": {
 			reply:    Engine{TemplateWriter{}},
 			wantCode: http.StatusNoContent,
 			wantBody: "",
+		},
+		"json writer": {
+			reply:    Engine{JSONWriter{}},
+			wantCode: http.StatusNoContent,
+			wantBody: "null",
 		},
 	}
 	for name, c := range cases {

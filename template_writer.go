@@ -20,9 +20,9 @@ func (tw TemplateWriter) Error(w http.ResponseWriter, statusCode int) {
 }
 
 // Options represents fields used in Write.
-//   - Template defines the lookup in an Engine's Templates map
+//   - Template defines an optional lookup in an TemplateWriter's Templates
 //   - Invoke defines an optional named template to invoke
-//   - Data defines the data for use in a template
+//   - Data defines the data for use in a template or JSON output
 type Options struct {
 	Template string
 	Invoke   string
@@ -44,20 +44,17 @@ func (tw TemplateWriter) Write(w http.ResponseWriter, statusCode int, opts Optio
 		tw.Error(w, http.StatusInternalServerError)
 		return
 	}
-	buf := new(bytes.Buffer)
+	buffer := new(bytes.Buffer)
 	name := opts.Template
 	if opts.Invoke != "" {
 		name = opts.Invoke
 	}
-	if err := tmpl.ExecuteTemplate(buf, name, opts.Data); err != nil {
-		tw.Error(w, http.StatusInternalServerError)
-		return
-	}
-	if _, err := buf.WriteTo(w); err != nil {
+	if err := tmpl.ExecuteTemplate(buffer, name, opts.Data); err != nil {
 		tw.Error(w, http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(statusCode)
+	_, _ = buffer.WriteTo(w)
 }
 
 // TemplateMap returns a map of string to HTML template.
