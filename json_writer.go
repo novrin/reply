@@ -1,6 +1,7 @@
 package reply
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -17,16 +18,19 @@ func (jw JSONWriter) Error(w http.ResponseWriter, statusCode int) {
 	})
 }
 
-// Write sets the Content-Type header with "application/json". If it fails to
-// marshal the Data provided in opts, it writes a Internal Server Error.
-// Otherwise it write the given status code and the marshalled data.
+// Write replies to a request with the given status code and opts Data encoded
+// to JSON. The encoding is first written to a buffer. If an error occurs, it
+// replies with an Internal Server Error. Otherwise, it writes the given status
+// code and the encoded data.
 func (jw JSONWriter) Write(w http.ResponseWriter, statusCode int, opts Options) {
 	w.Header().Set("Content-Type", "application/json")
-	j, err := json.Marshal(opts.Data)
-	if err != nil {
+	buffer := new(bytes.Buffer)
+	if err := json.NewEncoder(buffer).Encode(opts.Data); err != nil {
 		statusCode = http.StatusInternalServerError
-		j = []byte(fmt.Sprint("failed to marshal ", err))
+		buffer.Reset()
+		e, _ := json.Marshal(map[string]string{"error": fmt.Sprintf("failed to marshal %v", err)})
+		buffer.Write(e)
 	}
 	w.WriteHeader(statusCode)
-	w.Write(j)
+	_, _ = buffer.WriteTo(w)
 }

@@ -40,7 +40,7 @@ func TestWriteJSON(t *testing.T) {
 			if got := w.Code; got != c.wantCode {
 				t.Fatalf(errorString, got, c.wantCode)
 			}
-			if got := w.Body.String(); !strings.Contains(got, c.wantBody) {
+			if got := strings.TrimSpace(w.Body.String()); !strings.Contains(got, c.wantBody) {
 				t.Fatalf(errorString, got, c.wantBody)
 			}
 		})
@@ -68,7 +68,7 @@ func TestErrorJSON(t *testing.T) {
 			if got := w.Code; got != c.code {
 				t.Fatalf(errorString, got, c.code)
 			}
-			if got := w.Body.String(); got != c.want {
+			if got := strings.TrimSpace(w.Body.String()); got != c.want {
 				t.Fatalf(errorString, got, c.want)
 			}
 		})
