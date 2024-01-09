@@ -14,7 +14,7 @@ go get github.com/novrin/reply
 
 ## Usage
 
-The example below, we use a reply Engine to compose replies to server requests in an application's handler functions.
+In the example below, we add a reply engine to a application and use it in its HTTP handlers to compose replies to requests.
 
 ```go
 package main
