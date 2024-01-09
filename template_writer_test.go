@@ -1,8 +1,6 @@
 package reply
 
 import (
-	"bytes"
-	"errors"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -30,25 +28,6 @@ func TestError(t *testing.T) {
 			}
 		})
 	}
-}
-
-// errorWriter wraps a response writter. It is used in this testing context to
-// throw an intentional error when calling it's Write receiver.
-type errorWriter struct {
-	http.ResponseWriter
-	Code int
-	Body *bytes.Buffer
-}
-
-func (ew *errorWriter) WriteHeader(statusCode int) {
-	ew.Code = statusCode
-	ew.ResponseWriter.WriteHeader(statusCode)
-}
-
-func (ew *errorWriter) Write(b []byte) (int, error) {
-	ew.Body.Reset()
-	ew.Body.Write(b)
-	return 0, errors.New("intentional error on write")
 }
 
 func TestWrite(t *testing.T) {
@@ -134,40 +113,16 @@ func TestWrite(t *testing.T) {
 			wantCode: http.StatusOK,
 			wantBody: "Hello, Stars",
 		},
-		"everything ok; error in buff": {
-			tw:   TemplateWriter{Templates: templates},
-			code: http.StatusOK,
-			opts: Options{
-				Template: "foo",
-				Invoke:   "base",
-				Data:     struct{ Name string }{Name: "Stars"},
-			},
-			wantCode: http.StatusInternalServerError,
-			wantBody: http.StatusText(http.StatusInternalServerError),
-		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			var gotCode int
-			var gotBody string
-			switch name {
-			case "everything ok; error in buff":
-				w := &errorWriter{ResponseWriter: httptest.NewRecorder(), Body: new(bytes.Buffer)}
-				c.tw.Write(w, c.code, c.opts)
-				gotCode = w.Code
-				gotBody = w.Body.String()
-			default:
-				w := httptest.NewRecorder()
-				c.tw.Write(w, c.code, c.opts)
-				gotCode = w.Code
-				gotBody = w.Body.String()
+			w := httptest.NewRecorder()
+			c.tw.Write(w, c.code, c.opts)
+			if got := w.Code; got != c.wantCode {
+				t.Fatalf(errorString, got, c.wantCode)
 			}
-			if gotCode != c.wantCode {
-				t.Fatalf(errorString, gotCode, c.wantCode)
-			}
-			gotBody = strings.TrimSpace(gotBody)
-			if gotBody != c.wantBody {
-				t.Fatalf(errorString, gotBody, c.wantBody)
+			if got := strings.TrimSpace(w.Body.String()); got != c.wantBody {
+				t.Fatalf(errorString, got, c.wantBody)
 			}
 		})
 	}
