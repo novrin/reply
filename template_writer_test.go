@@ -1,6 +1,7 @@
 package reply
 
 import (
+	"fmt"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -12,112 +13,222 @@ import (
 
 const errorString = "\nGot:\t%#v\nWant:\t%#v\n"
 
-func TestError(t *testing.T) {
-	cases := map[string]int{
-		"ok":          http.StatusOK,
-		"bad Request": http.StatusBadRequest,
-		"not found":   http.StatusNotFound,
+var foo = template.Must(template.New("foo").Parse(`{{define "base"}}Hello, {{.Name}}{{end}}`))
+var bar = template.Must(template.New("bar").Parse(`{{define "base"}}Hiya{{end}}`))
+var baz = template.Must(template.New("baz").Parse(`Hiya, {{.Name}}`))
+var quux = template.Must(template.New("baz").Parse(`HELLO`))
+
+func TestNewTemplateWriter(t *testing.T) {
+	cases := map[string]struct {
+		templates map[string]*template.Template
+		want      []string
+	}{
+		"empty templates has default error.html and no_content.html": {
+			templates: map[string]*template.Template{},
+			want:      []string{"error.html", "no_content.html"},
+		},
+		"one template": {
+			templates: map[string]*template.Template{"foo": foo},
+			want:      []string{"error.html", "no_content.html", "foo"},
+		},
+		"many templates": {
+			templates: map[string]*template.Template{"foo": foo, "bar": bar},
+			want:      []string{"error.html", "no_content.html", "foo", "bar"},
+		},
 	}
-	tw := TemplateWriter{}
-	for name, code := range cases {
+	for name, c := range cases {
+		tw := NewTemplateWriter(c.templates)
 		t.Run(name, func(t *testing.T) {
-			w := httptest.NewRecorder()
-			tw.Error(w, code)
-			if got := w.Code; got != code {
-				t.Fatalf(errorString, got, code)
+			if got := len(tw.Templates); got != len(c.want) {
+				t.Fatalf(errorString, got, c.want)
+			}
+			for _, key := range c.want {
+				if _, ok := tw.Templates[key]; !ok {
+					t.Fatalf("absent key '%s' in writer templates", key)
+				}
 			}
 		})
 	}
 }
 
-func TestWrite(t *testing.T) {
-	templates := map[string]*template.Template{
-		"foo": template.Must(template.New("foo").
-			Parse(`{{define "base"}}Hello, {{.Name}}{{end}}`)),
-	}
+func TestBufferExecute(t *testing.T) {
 	cases := map[string]struct {
-		tw       TemplateWriter
+		key      string
+		wantErr  bool
+		wantBody string
+	}{
+		"error - no such template": {
+			key:      "foo",
+			wantErr:  true,
+			wantBody: "",
+		},
+		"error - buffer execute failed": {
+			key:      "baz",
+			wantErr:  true,
+			wantBody: "",
+		},
+		"ok": {
+			key:      "error.html",
+			wantErr:  false,
+			wantBody: "<p>qux</p>",
+		},
+	}
+	tw := NewTemplateWriter(map[string]*template.Template{"bar": bar, "baz": baz})
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			err := tw.BufferExecute(c.key, struct{ Error string }{Error: "qux"})
+			if err != nil && !c.wantErr {
+				t.Fatalf("got unwanted error - %s", err)
+			}
+			if err == nil && c.wantErr {
+				t.Fatal("wanted an error but didn't get one")
+			}
+			tw.WriteTo(w)
+			if got := w.Body.String(); got != c.wantBody {
+				t.Fatalf(errorString, got, c.wantBody)
+			}
+		})
+	}
+}
+
+func TestBufferExecuteTemplate(t *testing.T) {
+	cases := map[string]struct {
+		key      string
+		wantErr  bool
+		wantBody string
+	}{
+		"error - no such template": {
+			key:      "foo",
+			wantErr:  true,
+			wantBody: "",
+		},
+		"error - buffer execute failed": {
+			key:      "error.html",
+			wantErr:  true,
+			wantBody: "",
+		},
+		"ok": {
+			key:      "bar",
+			wantErr:  false,
+			wantBody: "Hiya",
+		},
+	}
+	tw := NewTemplateWriter(map[string]*template.Template{"bar": bar, "baz": baz})
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			err := tw.BufferExecuteTemplate(c.key, "base", struct{}{})
+			if err != nil && !c.wantErr {
+				t.Fatalf("got unwanted error - %s", err)
+			}
+			if err == nil && c.wantErr {
+				t.Fatal("wanted an error but didn't get one")
+			}
+			tw.WriteTo(w)
+			if got := w.Body.String(); got != c.wantBody {
+				t.Fatalf(errorString, got, c.wantBody)
+			}
+		})
+	}
+}
+
+func TestTemplateError(t *testing.T) {
+	cases := map[string]int{
+		"bad Request": http.StatusBadRequest,
+		"not found":   http.StatusNotFound,
+	}
+	tw := NewTemplateWriter(map[string]*template.Template{})
+	for name, code := range cases {
+		t.Run(name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			body := http.StatusText(code)
+			tw.Error(w, body, code)
+			if got := w.Code; got != code {
+				t.Fatalf(errorString, got, code)
+			}
+			want := fmt.Sprintf("<p>%s</p>", body)
+			if got := w.Body.String(); got != want {
+				t.Fatalf(errorString, got, "")
+			}
+		})
+	}
+}
+
+func TestTemplateReply(t *testing.T) {
+	cases := map[string]struct {
+		writer   Writer
 		code     int
 		opts     Options
 		wantCode int
 		wantBody string
 	}{
-		"nil Templates; nil Options": {
-			tw:       TemplateWriter{},
+		"Options nil": {
+			writer:   NewTemplateWriter(map[string]*template.Template{}),
 			code:     http.StatusOK,
 			opts:     Options{},
-			wantCode: http.StatusOK,
-			wantBody: "",
-		},
-		"nil Options": {
-			tw:       TemplateWriter{Templates: templates},
-			code:     http.StatusOK,
-			opts:     Options{},
-			wantCode: http.StatusOK,
-			wantBody: "",
-		},
-		"nil Templates": {
-			tw:       TemplateWriter{},
-			code:     http.StatusOK,
-			opts:     Options{Template: "foo"},
 			wantCode: http.StatusInternalServerError,
-			wantBody: http.StatusText(http.StatusInternalServerError),
+			wantBody: "<p>Internal Server Error</p>",
 		},
-		"template key not ok": {
-			tw:       TemplateWriter{Templates: templates},
+		"error - no such template": {
+			writer:   NewTemplateWriter(map[string]*template.Template{}),
 			code:     http.StatusOK,
-			opts:     Options{Template: "boo"},
+			opts:     Options{Key: "foo"},
 			wantCode: http.StatusInternalServerError,
-			wantBody: http.StatusText(http.StatusInternalServerError),
+			wantBody: "<p>Internal Server Error</p>",
 		},
-		"template key ok; no invoke": {
-			tw:       TemplateWriter{Templates: templates},
+		"template key ok; name nil": {
+			writer:   NewTemplateWriter(map[string]*template.Template{"quux": quux}),
 			code:     http.StatusOK,
-			opts:     Options{Template: "foo"},
+			opts:     Options{Key: "quux"},
 			wantCode: http.StatusOK,
-			wantBody: "",
+			wantBody: "HELLO",
 		},
-		"template key ok; bad invoke": {
-			tw:       TemplateWriter{Templates: templates},
+		"template key ok; name not ok": {
+			writer:   NewTemplateWriter(map[string]*template.Template{"foo": foo}),
 			code:     http.StatusOK,
-			opts:     Options{Template: "foo", Invoke: "bass"},
+			opts:     Options{Key: "foo", Name: "bass"},
 			wantCode: http.StatusInternalServerError,
-			wantBody: http.StatusText(http.StatusInternalServerError),
+			wantBody: "<p>Internal Server Error</p>",
 		},
-		"template key ok; good invoke": {
-			tw:       TemplateWriter{Templates: templates},
-			code:     http.StatusOK,
-			opts:     Options{Template: "foo", Invoke: "base"},
-			wantCode: http.StatusOK,
-			wantBody: "Hello,",
-		},
-		"template key ok; good invoke; bad data": {
-			tw:   TemplateWriter{Templates: templates},
-			code: http.StatusOK,
+		"template key ok; name ok": {
+			writer: NewTemplateWriter(map[string]*template.Template{"foo": foo}),
+			code:   http.StatusOK,
 			opts: Options{
-				Template: "foo",
-				Invoke:   "base",
-				Data:     struct{ Fame string }{Fame: "Stars"},
-			},
-			wantCode: http.StatusInternalServerError,
-			wantBody: http.StatusText(http.StatusInternalServerError),
-		},
-		"template key ok; good invoke; good data": {
-			tw:   TemplateWriter{Templates: templates},
-			code: http.StatusOK,
-			opts: Options{
-				Template: "foo",
-				Invoke:   "base",
-				Data:     struct{ Name string }{Name: "Stars"},
+				Key:  "foo",
+				Name: "base",
+				Data: struct{ Name string }{Name: "Sherlock"},
 			},
 			wantCode: http.StatusOK,
-			wantBody: "Hello, Stars",
+			wantBody: "Hello, Sherlock",
+		},
+		"template key ok; name ok; data not ok": {
+			writer: NewTemplateWriter(map[string]*template.Template{"foo": foo}),
+			code:   http.StatusOK,
+			opts: Options{
+				Key:  "foo",
+				Name: "base",
+				Data: struct{ Mame string }{Mame: "Sherlock"},
+			},
+			wantCode: http.StatusInternalServerError,
+			wantBody: "<p>Internal Server Error</p>",
+		},
+		"template key ok; name ok; data ok": {
+			writer: NewTemplateWriter(map[string]*template.Template{"foo": foo}),
+			code:   http.StatusOK,
+			opts: Options{
+				Key:  "foo",
+				Name: "base",
+				Data: struct{ Name string }{Name: "Sherlock"},
+			},
+			wantCode: http.StatusOK,
+			wantBody: "Hello, Sherlock",
 		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			c.tw.Write(w, c.code, c.opts)
+			c.writer.Reply(w, c.code, c.opts)
 			if got := w.Code; got != c.wantCode {
 				t.Fatalf(errorString, got, c.wantCode)
 			}
@@ -149,12 +260,12 @@ func TestTemplateMap(t *testing.T) {
 		wantLen  int
 		wantKeys []string
 	}{
-		"fs Glob error": {
+		"error - fs Glob ": {
 			fsys:    templates,
 			src:     "[",
 			wantErr: true,
 		},
-		"template parse error": {
+		"error - template parse": {
 			fsys:    badTemplates,
 			src:     "html/pages/*.html",
 			base:    "html/base.html",

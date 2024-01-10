@@ -2,59 +2,99 @@ package reply
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"io/fs"
 	"net/http"
 	"path/filepath"
 )
 
+var (
+	errorHTML     string = `<p>{{.Error}}</p>`
+	NoContentHTML string = ""
+)
+
+func NewTemplateWriter(templates map[string]*template.Template) *TemplateWriter {
+	if _, ok := templates["error.html"]; !ok {
+		templates["error.html"] = template.Must(template.New("error.html").Parse(errorHTML))
+		templates["no_content.html"] = template.Must(template.New("no_content.html").Parse(NoContentHTML))
+	}
+	return &TemplateWriter{Templates: templates, buffer: new(bytes.Buffer)}
+}
+
 // Template writer implements Writer for template responses.
 type TemplateWriter struct {
 	Templates map[string]*template.Template
+	buffer    *bytes.Buffer
+}
+
+func (tw *TemplateWriter) BufferExecute(key string, data any) error {
+	template, ok := tw.Templates[key]
+	if !ok {
+		return fmt.Errorf("no such template '%s'", key)
+	}
+	if err := template.Execute(tw.buffer, data); err != nil {
+		tw.buffer.Reset()
+		return err
+	}
+	return nil
+}
+
+func (tw *TemplateWriter) BufferExecuteTemplate(key string, name string, data any) error {
+	template, ok := tw.Templates[key]
+	if !ok {
+		return fmt.Errorf("no such template '%s'", key)
+	}
+	if err := template.ExecuteTemplate(tw.buffer, name, data); err != nil {
+		tw.buffer.Reset()
+		return err
+	}
+	return nil
+}
+
+func (tw *TemplateWriter) WriteTo(w http.ResponseWriter) (int64, error) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	return tw.buffer.WriteTo(w)
 }
 
 // Error replies to the request with the given HTTP status code and its text
 // description in plain text.
-func (tw TemplateWriter) Error(w http.ResponseWriter, statusCode int) {
-	http.Error(w, http.StatusText(statusCode), statusCode)
+func (tw *TemplateWriter) Error(w http.ResponseWriter, error string, code int) {
+	_ = tw.BufferExecute("error.html", struct{ Error string }{Error: error})
+	w.WriteHeader(code)
+	_, _ = tw.WriteTo(w)
 }
 
 // Options represents fields used in Write.
-//   - Template defines an optional lookup in an TemplateWriter's Templates
-//   - Invoke defines an optional named template to invoke
-//   - Data defines the data for use in a template or JSON output
+//   - Debug defines whether transparent error strings are sent in responses
+//   - Key defines a lookup in an TemplateWriter's Templates
+//   - Name defines a named template to invoke
+//   - Data defines data for use in a template or JSON output
 type Options struct {
-	Template string
-	Invoke   string
-	Data     interface{}
+	Debug bool
+	Key   string
+	Name  string
+	Data  any
 }
 
-// Write searches tw's Templates map using the Template key provided in opts.
-// If a key is not provided, it simple writes the given status code. If a key
-// given but does not exist, it throws an error. Otherwise, the template is
-// applied and written on a buffer. The buffer then attempts to write to the
-// writer which succeeds if and only if the attempt yields no errors.
-func (tw TemplateWriter) Write(w http.ResponseWriter, statusCode int, opts Options) {
-	if opts.Template == "" {
-		w.WriteHeader(statusCode)
+func (tw *TemplateWriter) Reply(w http.ResponseWriter, code int, opts Options) {
+	var err error
+	if opts.Name != "" {
+		err = tw.BufferExecuteTemplate(opts.Key, opts.Name, opts.Data)
+	} else {
+		err = tw.BufferExecute(opts.Key, opts.Data)
+	}
+	if err != nil {
+		message := err.Error()
+		if !opts.Debug {
+			message = http.StatusText(http.StatusInternalServerError)
+		}
+		tw.Error(w, message, http.StatusInternalServerError)
 		return
 	}
-	tmpl, ok := tw.Templates[opts.Template]
-	if !ok {
-		tw.Error(w, http.StatusInternalServerError)
-		return
-	}
-	buffer := new(bytes.Buffer)
-	name := opts.Template
-	if opts.Invoke != "" {
-		name = opts.Invoke
-	}
-	if err := tmpl.ExecuteTemplate(buffer, name, opts.Data); err != nil {
-		tw.Error(w, http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(statusCode)
-	_, _ = buffer.WriteTo(w)
+	w.WriteHeader(code)
+	_, _ = tw.buffer.WriteTo(w)
 }
 
 // TemplateMap returns a map of string to HTML template.
