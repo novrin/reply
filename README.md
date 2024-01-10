@@ -49,8 +49,8 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	app.reply.OK(w, reply.Options{
-		Template: "home.html",
-		Invoke:   "base",
+		Key:  "home.html",
+		Name: "base",
 		Data: struct{ Users []database.Users }{Users: users},
 	})
 }
