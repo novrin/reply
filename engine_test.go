@@ -2,6 +2,7 @@ package reply
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -15,12 +16,12 @@ func TestBadRequest(t *testing.T) {
 		wantBody string
 	}{
 		"template writer": {
-			reply:    Engine{TemplateWriter{}},
+			reply:    Engine{NewTemplateWriter(map[string]*template.Template{})},
 			wantCode: http.StatusBadRequest,
-			wantBody: http.StatusText(http.StatusBadRequest),
+			wantBody: fmt.Sprintf("<p>%s</p>", http.StatusText(http.StatusBadRequest)),
 		},
 		"json writer": {
-			reply:    Engine{JSONWriter{}},
+			reply:    Engine{NewJSONWriter()},
 			wantCode: http.StatusBadRequest,
 			wantBody: `{"error":"Bad Request"}`,
 		},
@@ -46,12 +47,12 @@ func TestUnauthorized(t *testing.T) {
 		wantBody string
 	}{
 		"template writer": {
-			reply:    Engine{TemplateWriter{}},
+			reply:    Engine{NewTemplateWriter(map[string]*template.Template{})},
 			wantCode: http.StatusUnauthorized,
-			wantBody: http.StatusText(http.StatusUnauthorized),
+			wantBody: fmt.Sprintf("<p>%s</p>", http.StatusText(http.StatusUnauthorized)),
 		},
 		"json writer": {
-			reply:    Engine{JSONWriter{}},
+			reply:    Engine{NewJSONWriter()},
 			wantCode: http.StatusUnauthorized,
 			wantBody: `{"error":"Unauthorized"}`,
 		},
@@ -77,12 +78,12 @@ func TestForbidden(t *testing.T) {
 		wantBody string
 	}{
 		"template writer": {
-			reply:    Engine{TemplateWriter{}},
+			reply:    Engine{NewTemplateWriter(map[string]*template.Template{})},
 			wantCode: http.StatusForbidden,
-			wantBody: http.StatusText(http.StatusForbidden),
+			wantBody: fmt.Sprintf("<p>%s</p>", http.StatusText(http.StatusForbidden)),
 		},
 		"json writer": {
-			reply:    Engine{JSONWriter{}},
+			reply:    Engine{NewJSONWriter()},
 			wantCode: http.StatusForbidden,
 			wantBody: `{"error":"Forbidden"}`,
 		},
@@ -108,12 +109,12 @@ func TestNotFound(t *testing.T) {
 		wantBody string
 	}{
 		"template writer": {
-			reply:    Engine{TemplateWriter{}},
+			reply:    Engine{NewTemplateWriter(map[string]*template.Template{})},
 			wantCode: http.StatusNotFound,
-			wantBody: http.StatusText(http.StatusNotFound),
+			wantBody: fmt.Sprintf("<p>%s</p>", http.StatusText(http.StatusNotFound)),
 		},
 		"json writer": {
-			reply:    Engine{JSONWriter{}},
+			reply:    Engine{NewJSONWriter()},
 			wantCode: http.StatusNotFound,
 			wantBody: `{"error":"Not Found"}`,
 		},
@@ -141,28 +142,28 @@ func TestMethodNotAllowed(t *testing.T) {
 		wantAllow string
 	}{
 		"template writer; allow one": {
-			reply:     Engine{TemplateWriter{}},
+			reply:     Engine{NewTemplateWriter(map[string]*template.Template{})},
 			allow:     []string{http.MethodGet},
 			wantCode:  http.StatusMethodNotAllowed,
-			wantBody:  http.StatusText(http.StatusMethodNotAllowed),
+			wantBody:  fmt.Sprintf("<p>%s</p>", http.StatusText(http.StatusMethodNotAllowed)),
 			wantAllow: http.MethodGet,
 		},
 		"template writer; allow multiple": {
-			reply:     Engine{TemplateWriter{}},
+			reply:     Engine{NewTemplateWriter(map[string]*template.Template{})},
 			allow:     []string{http.MethodGet, http.MethodPost},
 			wantCode:  http.StatusMethodNotAllowed,
-			wantBody:  http.StatusText(http.StatusMethodNotAllowed),
+			wantBody:  fmt.Sprintf("<p>%s</p>", http.StatusText(http.StatusMethodNotAllowed)),
 			wantAllow: strings.Join([]string{http.MethodGet, http.MethodPost}, ", "),
 		},
 		"json writer; allow one": {
-			reply:     Engine{JSONWriter{}},
+			reply:     Engine{NewJSONWriter()},
 			allow:     []string{http.MethodGet},
 			wantCode:  http.StatusMethodNotAllowed,
 			wantBody:  `{"error":"Method Not Allowed"}`,
 			wantAllow: http.MethodGet,
 		},
 		"json writer; allow multiple": {
-			reply:     Engine{JSONWriter{}},
+			reply:     Engine{NewJSONWriter()},
 			allow:     []string{http.MethodGet, http.MethodPost},
 			wantCode:  http.StatusMethodNotAllowed,
 			wantBody:  `{"error":"Method Not Allowed"}`,
@@ -193,12 +194,12 @@ func TestInternalServerError(t *testing.T) {
 		wantBody string
 	}{
 		"template writer": {
-			reply:    Engine{TemplateWriter{}},
+			reply:    Engine{NewTemplateWriter(map[string]*template.Template{})},
 			wantCode: http.StatusInternalServerError,
-			wantBody: http.StatusText(http.StatusInternalServerError),
+			wantBody: fmt.Sprintf("<p>%s</p>", http.StatusText(http.StatusInternalServerError)),
 		},
 		"json writer": {
-			reply:    Engine{JSONWriter{}},
+			reply:    Engine{NewJSONWriter()},
 			wantCode: http.StatusInternalServerError,
 			wantBody: `{"error":"Internal Server Error"}`,
 		},
@@ -223,21 +224,29 @@ func TestOK(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
-		"template writer": {
-			reply:    Engine{TemplateWriter{}},
+		"template writer, no template": {
+			reply:    Engine{NewTemplateWriter(map[string]*template.Template{"foo": foo})},
 			wantCode: http.StatusOK,
-			wantBody: "",
+			wantBody: "Hello, Sherlock",
 		},
 		"json writer": {
-			reply:    Engine{JSONWriter{}},
+			reply:    Engine{NewJSONWriter()},
 			wantCode: http.StatusOK,
-			wantBody: "null",
+			wantBody: `{"name":"Sherlock"}`,
 		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			c.reply.OK(w, Options{})
+			c.reply.OK(w, Options{
+				Key:  "foo",
+				Name: "base",
+				Data: struct {
+					Name string `json:"name"`
+				}{
+					Name: "Sherlock",
+				},
+			})
 			if got := w.Code; got != c.wantCode {
 				t.Fatalf(errorString, got, c.wantCode)
 			}
@@ -254,21 +263,29 @@ func TestCreated(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
-		"template writer": {
-			reply:    Engine{TemplateWriter{}},
+		"template writer; no template": {
+			reply:    Engine{NewTemplateWriter(map[string]*template.Template{"foo": foo})},
 			wantCode: http.StatusCreated,
-			wantBody: "",
+			wantBody: "Hello, Sherlock",
 		},
 		"json writer": {
-			reply:    Engine{JSONWriter{}},
+			reply:    Engine{NewJSONWriter()},
 			wantCode: http.StatusCreated,
-			wantBody: "null",
+			wantBody: `{"name":"Sherlock"}`,
 		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			c.reply.Created(w, Options{})
+			c.reply.Created(w, Options{
+				Key:  "foo",
+				Name: "base",
+				Data: struct {
+					Name string `json:"name"`
+				}{
+					Name: "Sherlock",
+				},
+			})
 			if got := w.Code; got != c.wantCode {
 				t.Fatalf(errorString, got, c.wantCode)
 			}
@@ -285,13 +302,13 @@ func TestNoContent(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
-		"template writer": {
-			reply:    Engine{TemplateWriter{}},
+		"template writer; no template": {
+			reply:    Engine{NewTemplateWriter(map[string]*template.Template{"quux": quux})},
 			wantCode: http.StatusNoContent,
 			wantBody: "",
 		},
 		"json writer": {
-			reply:    Engine{JSONWriter{}},
+			reply:    Engine{NewJSONWriter()},
 			wantCode: http.StatusNoContent,
 			wantBody: "null",
 		},

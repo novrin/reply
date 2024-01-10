@@ -33,15 +33,6 @@ type Application struct {
 	reply reply.Engine // Use a reply Engine to write responses 
 }
 
-// NotFound renders the 404 template.
-func (app *Application) NotFound(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		app.reply.MethodNotAllowed(w, http.MethodGet)
-		return
-	}
-	app.reply.Write(w, http.StatusNotFound, reply.Options{Template: "404.html"})
-}
-
 // Home renders the home template.
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -67,6 +58,6 @@ func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
 
 ## License
 
-Copyright (c) 2023-present [novrin](https://github.com/novrin)
+[MIT](./LICENSE)
 
-Licensed under [MIT License](./LICENSE)
+Copyright (c) 2023-present [novrin](https://github.com/novrin)
