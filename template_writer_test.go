@@ -51,7 +51,7 @@ func TestNewTemplateWriter(t *testing.T) {
 	}
 }
 
-func TestBufferExecute(t *testing.T) {
+func TestExecute(t *testing.T) {
 	cases := map[string]struct {
 		key      string
 		wantErr  bool
@@ -77,7 +77,7 @@ func TestBufferExecute(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			err := tw.BufferExecute(c.key, struct{ Error string }{Error: "qux"})
+			err := tw.Execute(c.key, struct{ Error string }{Error: "qux"})
 			if err != nil && !c.wantErr {
 				t.Fatalf("got unwanted error - %s", err)
 			}
@@ -92,7 +92,7 @@ func TestBufferExecute(t *testing.T) {
 	}
 }
 
-func TestBufferExecuteTemplate(t *testing.T) {
+func TestExecuteTemplate(t *testing.T) {
 	cases := map[string]struct {
 		key      string
 		wantErr  bool
@@ -118,7 +118,7 @@ func TestBufferExecuteTemplate(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			err := tw.BufferExecuteTemplate(c.key, "base", struct{}{})
+			err := tw.ExecuteTemplate(c.key, "base", struct{}{})
 			if err != nil && !c.wantErr {
 				t.Fatalf("got unwanted error - %s", err)
 			}
