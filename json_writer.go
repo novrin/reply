@@ -51,7 +51,7 @@ func (jw JSONWriter) Reply(w http.ResponseWriter, code int, opts Options) {
 		jw.Error(w, message, http.StatusInternalServerError)
 	}
 	w.WriteHeader(code)
-	_, _ = jw.buffer.WriteTo(w)
+	_, _ = jw.WriteTo(w)
 }
 
 // NewJSONWriter returns a new JSONWriter with an empty buffer.

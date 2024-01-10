@@ -116,7 +116,7 @@ func (tw *TemplateWriter) Reply(w http.ResponseWriter, code int, opts Options) {
 		return
 	}
 	w.WriteHeader(code)
-	_, _ = tw.buffer.WriteTo(w)
+	_, _ = tw.WriteTo(w)
 }
 
 // NewTemplateWriter returns a new TemplateWriter with the given templates and
