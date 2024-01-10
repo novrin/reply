@@ -10,6 +10,7 @@ import (
 
 // Writer is used by an Engine to construct replies to HTTP server requests.
 type Writer interface {
+	WriteTo(w http.ResponseWriter) (int64, error)
 	Error(w http.ResponseWriter, error string, code int)
 	Reply(w http.ResponseWriter, code int, opts Options)
 }

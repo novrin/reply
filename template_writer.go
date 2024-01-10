@@ -30,8 +30,8 @@ type TemplateWriter struct {
 // Execute applies the template mapped to key to the given data object, writing
 // the output to tw's buffer. If an error occurs executing the template or
 // writing its output, execution stops, the buffer is reset, and the error is
-// returned. This is called in Reply to prevent partial HTML rendering in the
-// response to the client if an error occurs.
+// returned. It is called in Reply to prevent partial HTML responses if an
+// error occurs.
 func (tw *TemplateWriter) Execute(key string, data any) error {
 	template, ok := tw.Templates[key]
 	if !ok {
@@ -47,8 +47,8 @@ func (tw *TemplateWriter) Execute(key string, data any) error {
 // ExecuteTemplate applies the template mapped to key that has the given name to
 // the given data object and writes the output to tw's buffer. If an error
 // occurs executing the template or writing its output, execution stops, the
-// buffer is reset, and the error is returned.This is called in Reply to prevent
-// partial HTML rendering in the response to the client if an error occurs.
+// buffer is reset, and the error is returned. It is called in Reply to prevent
+// partial HTML responses if an error occurs.
 func (tw *TemplateWriter) ExecuteTemplate(key string, name string, data any) error {
 	template, ok := tw.Templates[key]
 	if !ok {
@@ -90,7 +90,7 @@ type Options struct {
 	// Internal Server Error.
 	Key string
 
-	// Name defines an optional named template to invoke.
+	// Name defines an optional named template to execute.
 	Name string
 
 	// Data defines data for use in a TemplateWriter's Execution or JSON output.
@@ -119,10 +119,10 @@ func (tw *TemplateWriter) Reply(w http.ResponseWriter, code int, opts Options) {
 	_, _ = tw.buffer.WriteTo(w)
 }
 
-// NewTemplateWriter returns a new TemplateWriter with the given templates; it
-// is always initialized with an empty buffer. If no "error.html" or
-// "no_content.html" are supplied in templates, the default HTML provided in
-// vars errorHTML and NoContentHTML are parsed and used.
+// NewTemplateWriter returns a new TemplateWriter with the given templates and
+// an empty buffer. If no "error.html" or "no_content.html" are supplied in
+// templates, the default HTML provided in vars errorHTML and NoContentHTML are
+// parsed and used.
 func NewTemplateWriter(templates map[string]*template.Template) *TemplateWriter {
 	if _, ok := templates["error.html"]; !ok {
 		templates["error.html"] = template.Must(template.New("error.html").Parse(errorHTML))

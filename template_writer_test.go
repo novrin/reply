@@ -37,8 +37,8 @@ func TestNewTemplateWriter(t *testing.T) {
 		},
 	}
 	for name, c := range cases {
-		tw := NewTemplateWriter(c.templates)
 		t.Run(name, func(t *testing.T) {
+			tw := NewTemplateWriter(c.templates)
 			if got := len(tw.Templates); got != len(c.want) {
 				t.Fatalf(errorString, got, c.want)
 			}
@@ -46,6 +46,11 @@ func TestNewTemplateWriter(t *testing.T) {
 				if _, ok := tw.Templates[key]; !ok {
 					t.Fatalf("absent key '%s' in writer templates", key)
 				}
+			}
+			w := httptest.NewRecorder()
+			tw.WriteTo(w)
+			if got, want := w.Body.String(), ""; got != want {
+				t.Fatalf(errorString, got, want)
 			}
 		})
 	}

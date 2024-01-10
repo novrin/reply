@@ -20,11 +20,11 @@ func TestBadRequest(t *testing.T) {
 			wantCode: http.StatusBadRequest,
 			wantBody: fmt.Sprintf("<p>%s</p>", http.StatusText(http.StatusBadRequest)),
 		},
-		// "json writer": {
-		// 	reply:    Engine{JSONWriter{}},
-		// 	wantCode: http.StatusBadRequest,
-		// 	wantBody: `{"error":"Bad Request"}`,
-		// },
+		"json writer": {
+			reply:    Engine{NewJSONWriter()},
+			wantCode: http.StatusBadRequest,
+			wantBody: `{"error":"Bad Request"}`,
+		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -51,11 +51,11 @@ func TestUnauthorized(t *testing.T) {
 			wantCode: http.StatusUnauthorized,
 			wantBody: fmt.Sprintf("<p>%s</p>", http.StatusText(http.StatusUnauthorized)),
 		},
-		// "json writer": {
-		// 	reply:    Engine{JSONWriter{}},
-		// 	wantCode: http.StatusUnauthorized,
-		// 	wantBody: `{"error":"Unauthorized"}`,
-		// },
+		"json writer": {
+			reply:    Engine{NewJSONWriter()},
+			wantCode: http.StatusUnauthorized,
+			wantBody: `{"error":"Unauthorized"}`,
+		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -82,11 +82,11 @@ func TestForbidden(t *testing.T) {
 			wantCode: http.StatusForbidden,
 			wantBody: fmt.Sprintf("<p>%s</p>", http.StatusText(http.StatusForbidden)),
 		},
-		// "json writer": {
-		// 	reply:    Engine{JSONWriter{}},
-		// 	wantCode: http.StatusForbidden,
-		// 	wantBody: `{"error":"Forbidden"}`,
-		// },
+		"json writer": {
+			reply:    Engine{NewJSONWriter()},
+			wantCode: http.StatusForbidden,
+			wantBody: `{"error":"Forbidden"}`,
+		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -113,11 +113,11 @@ func TestNotFound(t *testing.T) {
 			wantCode: http.StatusNotFound,
 			wantBody: fmt.Sprintf("<p>%s</p>", http.StatusText(http.StatusNotFound)),
 		},
-		// "json writer": {
-		// 	reply:    Engine{JSONWriter{}},
-		// 	wantCode: http.StatusNotFound,
-		// 	wantBody: `{"error":"Not Found"}`,
-		// },
+		"json writer": {
+			reply:    Engine{NewJSONWriter()},
+			wantCode: http.StatusNotFound,
+			wantBody: `{"error":"Not Found"}`,
+		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -155,20 +155,20 @@ func TestMethodNotAllowed(t *testing.T) {
 			wantBody:  fmt.Sprintf("<p>%s</p>", http.StatusText(http.StatusMethodNotAllowed)),
 			wantAllow: strings.Join([]string{http.MethodGet, http.MethodPost}, ", "),
 		},
-		// "json writer; allow one": {
-		// 	reply:     Engine{JSONWriter{}},
-		// 	allow:     []string{http.MethodGet},
-		// 	wantCode:  http.StatusMethodNotAllowed,
-		// 	wantBody:  `{"error":"Method Not Allowed"}`,
-		// 	wantAllow: http.MethodGet,
-		// },
-		// "json writer; allow multiple": {
-		// 	reply:     Engine{JSONWriter{}},
-		// 	allow:     []string{http.MethodGet, http.MethodPost},
-		// 	wantCode:  http.StatusMethodNotAllowed,
-		// 	wantBody:  `{"error":"Method Not Allowed"}`,
-		// 	wantAllow: strings.Join([]string{http.MethodGet, http.MethodPost}, ", "),
-		// },
+		"json writer; allow one": {
+			reply:     Engine{NewJSONWriter()},
+			allow:     []string{http.MethodGet},
+			wantCode:  http.StatusMethodNotAllowed,
+			wantBody:  `{"error":"Method Not Allowed"}`,
+			wantAllow: http.MethodGet,
+		},
+		"json writer; allow multiple": {
+			reply:     Engine{NewJSONWriter()},
+			allow:     []string{http.MethodGet, http.MethodPost},
+			wantCode:  http.StatusMethodNotAllowed,
+			wantBody:  `{"error":"Method Not Allowed"}`,
+			wantAllow: strings.Join([]string{http.MethodGet, http.MethodPost}, ", "),
+		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -198,11 +198,11 @@ func TestInternalServerError(t *testing.T) {
 			wantCode: http.StatusInternalServerError,
 			wantBody: fmt.Sprintf("<p>%s</p>", http.StatusText(http.StatusInternalServerError)),
 		},
-		// "json writer": {
-		// 	reply:    Engine{JSONWriter{}},
-		// 	wantCode: http.StatusInternalServerError,
-		// 	wantBody: `{"error":"Internal Server Error"}`,
-		// },
+		"json writer": {
+			reply:    Engine{NewJSONWriter()},
+			wantCode: http.StatusInternalServerError,
+			wantBody: `{"error":"Internal Server Error"}`,
+		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -229,11 +229,11 @@ func TestOK(t *testing.T) {
 			wantCode: http.StatusOK,
 			wantBody: "Hello, Sherlock",
 		},
-		// "json writer": {
-		// 	reply:    Engine{JSONWriter{}},
-		// 	wantCode: http.StatusOK,
-		// 	wantBody: "null",
-		// },
+		"json writer": {
+			reply:    Engine{NewJSONWriter()},
+			wantCode: http.StatusOK,
+			wantBody: `{"name":"Sherlock"}`,
+		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -241,7 +241,11 @@ func TestOK(t *testing.T) {
 			c.reply.OK(w, Options{
 				Key:  "foo",
 				Name: "base",
-				Data: struct{ Name string }{Name: "Sherlock"},
+				Data: struct {
+					Name string `json:"name"`
+				}{
+					Name: "Sherlock",
+				},
 			})
 			if got := w.Code; got != c.wantCode {
 				t.Fatalf(errorString, got, c.wantCode)
@@ -264,11 +268,11 @@ func TestCreated(t *testing.T) {
 			wantCode: http.StatusCreated,
 			wantBody: "Hello, Sherlock",
 		},
-		// "json writer": {
-		// 	reply:    Engine{JSONWriter{}},
-		// 	wantCode: http.StatusCreated,
-		// 	wantBody: "null",
-		// },
+		"json writer": {
+			reply:    Engine{NewJSONWriter()},
+			wantCode: http.StatusCreated,
+			wantBody: `{"name":"Sherlock"}`,
+		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -276,7 +280,11 @@ func TestCreated(t *testing.T) {
 			c.reply.Created(w, Options{
 				Key:  "foo",
 				Name: "base",
-				Data: struct{ Name string }{Name: "Sherlock"},
+				Data: struct {
+					Name string `json:"name"`
+				}{
+					Name: "Sherlock",
+				},
 			})
 			if got := w.Code; got != c.wantCode {
 				t.Fatalf(errorString, got, c.wantCode)
@@ -299,11 +307,11 @@ func TestNoContent(t *testing.T) {
 			wantCode: http.StatusNoContent,
 			wantBody: "",
 		},
-		// "json writer": {
-		// 	reply:    Engine{JSONWriter{}},
-		// 	wantCode: http.StatusNoContent,
-		// 	wantBody: "null",
-		// },
+		"json writer": {
+			reply:    Engine{NewJSONWriter()},
+			wantCode: http.StatusNoContent,
+			wantBody: "null",
+		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
