@@ -1,11 +1,7 @@
 package reply
 
 import (
-	"fmt"
-	"log/slog"
 	"net/http"
-	"runtime/debug"
-	"strings"
 )
 
 // Writer is used by an Engine to construct replies to HTTP server requests.
@@ -22,6 +18,8 @@ type Engine struct {
 	// sent in responses. If debug is false, the error string will simply be the
 	// plain text representation of the error code.
 	Debug bool
+
+	// Writer is an interface used to construct replies to HTTP server requests.
 	Writer
 }
 
@@ -45,10 +43,8 @@ func (e Engine) NotFound(w http.ResponseWriter) {
 	e.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 }
 
-// MethodNotAllowed sets an Allow header with the given methods,
-// then replies with HTTP Status 405 Method Not Allowed.
-func (e Engine) MethodNotAllowed(w http.ResponseWriter, allow ...string) {
-	w.Header().Set("Allow", strings.Join(allow, ", "))
+// MethodNotAllowed replies with HTTP Status 405 Method Not Allowed.
+func (e Engine) MethodNotAllowed(w http.ResponseWriter) {
 	e.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 }
 
@@ -82,10 +78,8 @@ func (e Engine) TooManyRequests(w http.ResponseWriter) {
 	e.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 }
 
-// InternalServerError uses slog to log an error and stack trace,
-// then replies with HTTP Status 500 Internal Server Error.
-func (e Engine) InternalServerError(w http.ResponseWriter, err error) {
-	slog.Error(fmt.Sprintf("%s\n%s", err.Error(), debug.Stack()))
+// InternalServerError replies with HTTP Status 500 Internal Server Error.
+func (e Engine) InternalServerError(w http.ResponseWriter) {
 	e.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 

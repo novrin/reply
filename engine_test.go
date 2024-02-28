@@ -17,11 +17,9 @@ func TestGenericErrors(t *testing.T) {
 	etw := Engine{Writer: NewTemplateWriter(map[string]*template.Template{})}
 	ejw := Engine{Writer: NewJSONWriter()}
 	cases := map[string]struct {
-		andErr    bool
-		methodErr func(http.ResponseWriter, error)
-		method    func(http.ResponseWriter)
-		wantCode  int
-		wantBody  string
+		method   func(http.ResponseWriter)
+		wantCode int
+		wantBody string
 	}{
 		"bad request - tw": {
 			method:   etw.BadRequest,
@@ -62,6 +60,16 @@ func TestGenericErrors(t *testing.T) {
 			method:   ejw.NotFound,
 			wantCode: http.StatusNotFound,
 			wantBody: `{"error":"Not Found"}`,
+		},
+		"method not allowed - tw": {
+			method:   etw.MethodNotAllowed,
+			wantCode: http.StatusMethodNotAllowed,
+			wantBody: errorTemplateBody(http.StatusMethodNotAllowed),
+		},
+		"method not allowed - jw": {
+			method:   ejw.MethodNotAllowed,
+			wantCode: http.StatusMethodNotAllowed,
+			wantBody: `{"error":"Method Not Allowed"}`,
 		},
 		"not acceptable - template writer": {
 			method:   etw.NotAcceptable,
@@ -124,87 +132,25 @@ func TestGenericErrors(t *testing.T) {
 			wantBody: `{"error":"Too Many Requests"}`,
 		},
 		"internal server error - tw": {
-			andErr:    true,
-			methodErr: etw.InternalServerError,
-			wantCode:  http.StatusInternalServerError,
-			wantBody:  errorTemplateBody(http.StatusInternalServerError),
+			method:   etw.InternalServerError,
+			wantCode: http.StatusInternalServerError,
+			wantBody: errorTemplateBody(http.StatusInternalServerError),
 		},
 		"internal server error - jw": {
-			andErr:    true,
-			methodErr: ejw.InternalServerError,
-			wantCode:  http.StatusInternalServerError,
-			wantBody:  `{"error":"Internal Server Error"}`,
+			method:   ejw.InternalServerError,
+			wantCode: http.StatusInternalServerError,
+			wantBody: `{"error":"Internal Server Error"}`,
 		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			if !c.andErr {
-				c.method(w)
-			} else {
-				c.methodErr(w, fmt.Errorf("sample error"))
-			}
+			c.method(w)
 			if got := w.Code; got != c.wantCode {
 				t.Errorf(errorString, got, c.wantCode)
 			}
 			if got := strings.TrimSpace(w.Body.String()); got != c.wantBody {
 				t.Errorf(errorString, got, c.wantBody)
-			}
-		})
-	}
-}
-
-func TestMethodNotAllowed(t *testing.T) {
-	etw := Engine{Writer: NewTemplateWriter(map[string]*template.Template{})}
-	ejw := Engine{Writer: NewJSONWriter()}
-	cases := map[string]struct {
-		reply     Engine
-		allow     []string
-		wantCode  int
-		wantBody  string
-		wantAllow string
-	}{
-		"allow one - tw": {
-			reply:     etw,
-			allow:     []string{http.MethodGet},
-			wantCode:  http.StatusMethodNotAllowed,
-			wantBody:  errorTemplateBody(http.StatusMethodNotAllowed),
-			wantAllow: http.MethodGet,
-		},
-		"allow one - jw": {
-			reply:     ejw,
-			allow:     []string{http.MethodGet},
-			wantCode:  http.StatusMethodNotAllowed,
-			wantBody:  `{"error":"Method Not Allowed"}`,
-			wantAllow: http.MethodGet,
-		},
-		"allow multiple - tw": {
-			reply:     etw,
-			allow:     []string{http.MethodGet, http.MethodPost},
-			wantCode:  http.StatusMethodNotAllowed,
-			wantBody:  errorTemplateBody(http.StatusMethodNotAllowed),
-			wantAllow: strings.Join([]string{http.MethodGet, http.MethodPost}, ", "),
-		},
-		"allow multiple - jw": {
-			reply:     ejw,
-			allow:     []string{http.MethodGet, http.MethodPost},
-			wantCode:  http.StatusMethodNotAllowed,
-			wantBody:  `{"error":"Method Not Allowed"}`,
-			wantAllow: strings.Join([]string{http.MethodGet, http.MethodPost}, ", "),
-		},
-	}
-	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			w := httptest.NewRecorder()
-			c.reply.MethodNotAllowed(w, c.allow...)
-			if got := w.Code; got != c.wantCode {
-				t.Errorf(errorString, got, c.wantCode)
-			}
-			if got := strings.TrimSpace(w.Body.String()); got != c.wantBody {
-				t.Errorf(errorString, got, c.wantBody)
-			}
-			if got := w.Header().Get("Allow"); got != c.wantAllow {
-				t.Errorf(errorString, got, c.wantAllow)
 			}
 		})
 	}
