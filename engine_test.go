@@ -311,6 +311,96 @@ func TestGenericErrors(t *testing.T) {
 			wantCode: http.StatusInternalServerError,
 			wantBody: `{"error":"Internal Server Error"}`,
 		},
+		"501 not implemented - tw": {
+			method:   etw.NotImplemented,
+			wantCode: http.StatusNotImplemented,
+			wantBody: errorTemplateBody(http.StatusNotImplemented),
+		},
+		"501 not implemented - jw": {
+			method:   ejw.NotImplemented,
+			wantCode: http.StatusNotImplemented,
+			wantBody: `{"error":"Not Implemented"}`,
+		},
+		"502 bad gateway - tw": {
+			method:   etw.BadGateway,
+			wantCode: http.StatusBadGateway,
+			wantBody: errorTemplateBody(http.StatusBadGateway),
+		},
+		"502 bad gateway  - jw": {
+			method:   ejw.BadGateway,
+			wantCode: http.StatusBadGateway,
+			wantBody: `{"error":"Bad Gateway"}`,
+		},
+		"503 service unavailable - tw": {
+			method:   etw.ServiceUnavailable,
+			wantCode: http.StatusServiceUnavailable,
+			wantBody: errorTemplateBody(http.StatusServiceUnavailable),
+		},
+		"503 service unavailable - jw": {
+			method:   ejw.ServiceUnavailable,
+			wantCode: http.StatusServiceUnavailable,
+			wantBody: `{"error":"Service Unavailable"}`,
+		},
+		"504 gateway timeout - tw": {
+			method:   etw.GatewayTimeout,
+			wantCode: http.StatusGatewayTimeout,
+			wantBody: errorTemplateBody(http.StatusGatewayTimeout),
+		},
+		"504 gateway timeout - jw": {
+			method:   ejw.GatewayTimeout,
+			wantCode: http.StatusGatewayTimeout,
+			wantBody: `{"error":"Gateway Timeout"}`,
+		},
+		"505 http version not supported - tw": {
+			method:   etw.HTTPVersionNotSupported,
+			wantCode: http.StatusHTTPVersionNotSupported,
+			wantBody: errorTemplateBody(http.StatusHTTPVersionNotSupported),
+		},
+		"505 http version not supported - jw": {
+			method:   ejw.HTTPVersionNotSupported,
+			wantCode: http.StatusHTTPVersionNotSupported,
+			wantBody: `{"error":"HTTP Version Not Supported"}`,
+		},
+		"506 variant also negotiates - tw": {
+			method:   etw.VariantAlsoNegotiates,
+			wantCode: http.StatusVariantAlsoNegotiates,
+			wantBody: errorTemplateBody(http.StatusVariantAlsoNegotiates),
+		},
+		"506 variant also negotiates - jw": {
+			method:   ejw.VariantAlsoNegotiates,
+			wantCode: http.StatusVariantAlsoNegotiates,
+			wantBody: `{"error":"Variant Also Negotiates"}`,
+		},
+		"507 insufficient storage - tw": {
+			method:   etw.InsufficientStorage,
+			wantCode: http.StatusInsufficientStorage,
+			wantBody: errorTemplateBody(http.StatusInsufficientStorage),
+		},
+		"507 insufficient storage - jw": {
+			method:   ejw.InsufficientStorage,
+			wantCode: http.StatusInsufficientStorage,
+			wantBody: `{"error":"Insufficient Storage"}`,
+		},
+		"508 loop detected - tw": {
+			method:   etw.LoopDetected,
+			wantCode: http.StatusLoopDetected,
+			wantBody: errorTemplateBody(http.StatusLoopDetected),
+		},
+		"508 loop detected - jw": {
+			method:   ejw.LoopDetected,
+			wantCode: http.StatusLoopDetected,
+			wantBody: `{"error":"Loop Detected"}`,
+		},
+		"511 network authentication required - tw": {
+			method:   etw.NetworkAuthenticationRequired,
+			wantCode: http.StatusNetworkAuthenticationRequired,
+			wantBody: errorTemplateBody(http.StatusNetworkAuthenticationRequired),
+		},
+		"511 network authentication required - jw": {
+			method:   ejw.NetworkAuthenticationRequired,
+			wantCode: http.StatusNetworkAuthenticationRequired,
+			wantBody: `{"error":"Network Authentication Required"}`,
+		},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {

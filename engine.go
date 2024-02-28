@@ -168,6 +168,51 @@ func (e Engine) InternalServerError(w http.ResponseWriter) {
 	e.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
+// NotImplemented replies with HTTP Status 501 Not Implemented.
+func (e Engine) NotImplemented(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
+}
+
+// BadGateway replies with HTTP Status 502 Bad Gateway.
+func (e Engine) BadGateway(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusBadGateway), http.StatusBadGateway)
+}
+
+// ServiceUnavailable replies with HTTP Status 503 Service Unavailable.
+func (e Engine) ServiceUnavailable(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+}
+
+// GatewayTimeout replies with HTTP Status 504 Gateway Timeout.
+func (e Engine) GatewayTimeout(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusGatewayTimeout), http.StatusGatewayTimeout)
+}
+
+// HTTPVersionNotSupported replies with HTTP Status 505 HTTP Version Not Supported.
+func (e Engine) HTTPVersionNotSupported(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusHTTPVersionNotSupported), http.StatusHTTPVersionNotSupported)
+}
+
+// VariantAlsoNegotiates replies with HTTP Status 506 Variant Also Negotiates.
+func (e Engine) VariantAlsoNegotiates(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusVariantAlsoNegotiates), http.StatusVariantAlsoNegotiates)
+}
+
+// InsufficientStorage replies with HTTP Status 507 Insufficient Storage.
+func (e Engine) InsufficientStorage(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusInsufficientStorage), http.StatusInsufficientStorage)
+}
+
+// LoopDetected replies with HTTP Status 508 Loop Detected.
+func (e Engine) LoopDetected(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusLoopDetected), http.StatusLoopDetected)
+}
+
+// NetworkAuthenticationRequired replies with HTTP Status 511 Network Authentication Required
+func (e Engine) NetworkAuthenticationRequired(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusNetworkAuthenticationRequired), http.StatusNetworkAuthenticationRequired)
+}
+
 // ReplyOrError wraps Reply with error debugging. If an error is encountered in
 // Reply, the Writer's Error function is triggered. Error essages are replaced
 // with 'Internal Server Error' if e.Debug is false.
