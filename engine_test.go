@@ -21,122 +21,292 @@ func TestGenericErrors(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
-		"bad request - tw": {
+		"400 bad request - tw": {
 			method:   etw.BadRequest,
 			wantCode: http.StatusBadRequest,
 			wantBody: errorTemplateBody(http.StatusBadRequest),
 		},
-		"bad request - jw": {
+		"400 bad request - jw": {
 			method:   ejw.BadRequest,
 			wantCode: http.StatusBadRequest,
 			wantBody: `{"error":"Bad Request"}`,
 		},
-		"unauthorized - tw": {
+		"401 unauthorized - tw": {
 			method:   etw.Unauthorized,
 			wantCode: http.StatusUnauthorized,
 			wantBody: errorTemplateBody(http.StatusUnauthorized),
 		},
-		"unauthorized - jw": {
+		"401 unauthorized - jw": {
 			method:   ejw.Unauthorized,
 			wantCode: http.StatusUnauthorized,
 			wantBody: `{"error":"Unauthorized"}`,
 		},
-		"forbidden - tw": {
+		"403 forbidden - tw": {
 			method:   etw.Forbidden,
 			wantCode: http.StatusForbidden,
 			wantBody: errorTemplateBody(http.StatusForbidden),
 		},
-		"forbidden - kw": {
+		"403 forbidden - kw": {
 			method:   ejw.Forbidden,
 			wantCode: http.StatusForbidden,
 			wantBody: `{"error":"Forbidden"}`,
 		},
-		"not found - tw": {
+		"404 not found - tw": {
 			method:   etw.NotFound,
 			wantCode: http.StatusNotFound,
 			wantBody: errorTemplateBody(http.StatusNotFound),
 		},
-		"not found - jw": {
+		"404 not found - jw": {
 			method:   ejw.NotFound,
 			wantCode: http.StatusNotFound,
 			wantBody: `{"error":"Not Found"}`,
 		},
-		"method not allowed - tw": {
+		"405 method not allowed - tw": {
 			method:   etw.MethodNotAllowed,
 			wantCode: http.StatusMethodNotAllowed,
 			wantBody: errorTemplateBody(http.StatusMethodNotAllowed),
 		},
-		"method not allowed - jw": {
+		"405 method not allowed - jw": {
 			method:   ejw.MethodNotAllowed,
 			wantCode: http.StatusMethodNotAllowed,
 			wantBody: `{"error":"Method Not Allowed"}`,
 		},
-		"not acceptable - template writer": {
+		"406 not acceptable - tw": {
 			method:   etw.NotAcceptable,
 			wantCode: http.StatusNotAcceptable,
 			wantBody: errorTemplateBody(http.StatusNotAcceptable),
 		},
-		"not acceptable - json writer": {
+		"406 not acceptable - jw": {
 			method:   ejw.NotAcceptable,
 			wantCode: http.StatusNotAcceptable,
 			wantBody: `{"error":"Not Acceptable"}`,
 		},
-		"request timeout - tw": {
+		"407 proxy authentication required - tw": {
+			method:   etw.ProxyAuthRequired,
+			wantCode: http.StatusProxyAuthRequired,
+			wantBody: errorTemplateBody(http.StatusProxyAuthRequired),
+		},
+		"407 proxy authentication required - jw": {
+			method:   ejw.ProxyAuthRequired,
+			wantCode: http.StatusProxyAuthRequired,
+			wantBody: `{"error":"Proxy Authentication Required"}`,
+		},
+		"408 request timeout - tw": {
 			method:   etw.RequestTimeout,
 			wantCode: http.StatusRequestTimeout,
 			wantBody: errorTemplateBody(http.StatusRequestTimeout),
 		},
-		"request timeout - jw": {
+		"408 request timeout - jw": {
 			method:   ejw.RequestTimeout,
 			wantCode: http.StatusRequestTimeout,
 			wantBody: `{"error":"Request Timeout"}`,
 		},
-		"conflict - tw": {
+		"409 conflict - tw": {
 			method:   etw.Conflict,
 			wantCode: http.StatusConflict,
 			wantBody: errorTemplateBody(http.StatusConflict),
 		},
-		"conflict - jw": {
+		"409 conflict - jw": {
 			method:   ejw.Conflict,
 			wantCode: http.StatusConflict,
 			wantBody: `{"error":"Conflict"}`,
 		},
-		"gone - tw": {
+		"410 gone - tw": {
 			method:   etw.Gone,
 			wantCode: http.StatusGone,
 			wantBody: errorTemplateBody(http.StatusGone),
 		},
-		"gone - jw": {
+		"410 gone - jw": {
 			method:   ejw.Gone,
 			wantCode: http.StatusGone,
 			wantBody: `{"error":"Gone"}`,
 		},
-		"unprocessable entity - tw": {
+		"411 length required - tw": {
+			method:   etw.LengthRequired,
+			wantCode: http.StatusLengthRequired,
+			wantBody: errorTemplateBody(http.StatusLengthRequired),
+		},
+		"411 length required - jw": {
+			method:   ejw.LengthRequired,
+			wantCode: http.StatusLengthRequired,
+			wantBody: `{"error":"Length Required"}`,
+		},
+		"412 precondition failed - tw": {
+			method:   etw.PreconditionFailed,
+			wantCode: http.StatusPreconditionFailed,
+			wantBody: errorTemplateBody(http.StatusPreconditionFailed),
+		},
+		"412 precondition failed - jw": {
+			method:   ejw.PreconditionFailed,
+			wantCode: http.StatusPreconditionFailed,
+			wantBody: `{"error":"Precondition Failed"}`,
+		},
+		"413 request entity too large - tw": {
+			method:   etw.RequestEntityTooLarge,
+			wantCode: http.StatusRequestEntityTooLarge,
+			wantBody: errorTemplateBody(http.StatusRequestEntityTooLarge),
+		},
+		"413 request entity too large - jw": {
+			method:   ejw.RequestEntityTooLarge,
+			wantCode: http.StatusRequestEntityTooLarge,
+			wantBody: `{"error":"Request Entity Too Large"}`,
+		},
+		"414 request uri too long - tw": {
+			method:   etw.RequestURITooLong,
+			wantCode: http.StatusRequestURITooLong,
+			wantBody: errorTemplateBody(http.StatusRequestURITooLong),
+		},
+		"414 request uri too long - jw": {
+			method:   ejw.RequestURITooLong,
+			wantCode: http.StatusRequestURITooLong,
+			wantBody: `{"error":"Request URI Too Long"}`,
+		},
+		"415 unsupported media type - tw": {
+			method:   etw.UnsupportedMediaType,
+			wantCode: http.StatusUnsupportedMediaType,
+			wantBody: errorTemplateBody(http.StatusUnsupportedMediaType),
+		},
+		"415 unsupported media type - jw": {
+			method:   ejw.UnsupportedMediaType,
+			wantCode: http.StatusUnsupportedMediaType,
+			wantBody: `{"error":"Unsupported Media Type"}`,
+		},
+		"416 requested range not satisfiable - tw": {
+			method:   etw.RequestedRangeNotSatisfiable,
+			wantCode: http.StatusRequestedRangeNotSatisfiable,
+			wantBody: errorTemplateBody(http.StatusRequestedRangeNotSatisfiable),
+		},
+		"416 requested range not satisfiable - jw": {
+			method:   ejw.RequestedRangeNotSatisfiable,
+			wantCode: http.StatusRequestedRangeNotSatisfiable,
+			wantBody: `{"error":"Requested Range Not Satisfiable"}`,
+		},
+		"417 expectation failed - tw": {
+			method:   etw.ExpectationFailed,
+			wantCode: http.StatusExpectationFailed,
+			wantBody: errorTemplateBody(http.StatusExpectationFailed),
+		},
+		"417 expectation failed - jw": {
+			method:   ejw.ExpectationFailed,
+			wantCode: http.StatusExpectationFailed,
+			wantBody: `{"error":"Expectation Failed"}`,
+		},
+		"418 teapot - tw": {
+			method:   etw.Teapot,
+			wantCode: http.StatusTeapot,
+			wantBody: "<p>I&#39;m a teapot</p>",
+		},
+		"418 teapot - jw": {
+			method:   ejw.Teapot,
+			wantCode: http.StatusTeapot,
+			wantBody: `{"error":"I'm a teapot"}`,
+		},
+		"421 misdirected request - tw": {
+			method:   etw.MisdirectedRequest,
+			wantCode: http.StatusMisdirectedRequest,
+			wantBody: errorTemplateBody(http.StatusMisdirectedRequest),
+		},
+		"421 misdirected request - jw": {
+			method:   ejw.MisdirectedRequest,
+			wantCode: http.StatusMisdirectedRequest,
+			wantBody: `{"error":"Misdirected Request"}`,
+		},
+		"422 unprocessable entity - tw": {
 			method:   etw.UnprocessableEntity,
 			wantCode: http.StatusUnprocessableEntity,
 			wantBody: errorTemplateBody(http.StatusUnprocessableEntity),
 		},
-		"unprocessable entity - jw": {
+		"422 unprocessable entity - jw": {
 			method:   ejw.UnprocessableEntity,
 			wantCode: http.StatusUnprocessableEntity,
 			wantBody: `{"error":"Unprocessable Entity"}`,
 		},
-		"too many requests - tw": {
+		"423 locked - tw": {
+			method:   etw.Locked,
+			wantCode: http.StatusLocked,
+			wantBody: errorTemplateBody(http.StatusLocked),
+		},
+		"423 locked - jw": {
+			method:   ejw.Locked,
+			wantCode: http.StatusLocked,
+			wantBody: `{"error":"Locked"}`,
+		},
+		"424 failed dependency - tw": {
+			method:   etw.FailedDependency,
+			wantCode: http.StatusFailedDependency,
+			wantBody: errorTemplateBody(http.StatusFailedDependency),
+		},
+		"424 failed dependency - jw": {
+			method:   ejw.FailedDependency,
+			wantCode: http.StatusFailedDependency,
+			wantBody: `{"error":"Failed Dependency"}`,
+		},
+		"425 too early - tw": {
+			method:   etw.TooEarly,
+			wantCode: http.StatusTooEarly,
+			wantBody: errorTemplateBody(http.StatusTooEarly),
+		},
+		"425 too early - jw": {
+			method:   ejw.TooEarly,
+			wantCode: http.StatusTooEarly,
+			wantBody: `{"error":"Too Early"}`,
+		},
+		"426 upgrade required - tw": {
+			method:   etw.UpgradeRequired,
+			wantCode: http.StatusUpgradeRequired,
+			wantBody: errorTemplateBody(http.StatusUpgradeRequired),
+		},
+		"426 upgrade required - jw": {
+			method:   ejw.UpgradeRequired,
+			wantCode: http.StatusUpgradeRequired,
+			wantBody: `{"error":"Upgrade Required"}`,
+		},
+		"428 precondition required - tw": {
+			method:   etw.PreconditionRequired,
+			wantCode: http.StatusPreconditionRequired,
+			wantBody: errorTemplateBody(http.StatusPreconditionRequired),
+		},
+		"428 precondition required - jw": {
+			method:   ejw.PreconditionRequired,
+			wantCode: http.StatusPreconditionRequired,
+			wantBody: `{"error":"Precondition Required"}`,
+		},
+		"429 too many requests - tw": {
 			method:   etw.TooManyRequests,
 			wantCode: http.StatusTooManyRequests,
 			wantBody: errorTemplateBody(http.StatusTooManyRequests),
 		},
-		"too many requests - jw": {
+		"429 too many requests - jw": {
 			method:   ejw.TooManyRequests,
 			wantCode: http.StatusTooManyRequests,
 			wantBody: `{"error":"Too Many Requests"}`,
 		},
-		"internal server error - tw": {
+		"431 request header fields too large - tw": {
+			method:   etw.RequestHeaderFieldsTooLarge,
+			wantCode: http.StatusRequestHeaderFieldsTooLarge,
+			wantBody: errorTemplateBody(http.StatusRequestHeaderFieldsTooLarge),
+		},
+		"431 request header fields too large - jw": {
+			method:   ejw.RequestHeaderFieldsTooLarge,
+			wantCode: http.StatusRequestHeaderFieldsTooLarge,
+			wantBody: `{"error":"Request Header Fields Too Large"}`,
+		},
+		"451 unavailable for legal reasons - tw": {
+			method:   etw.UnavailableForLegalReasons,
+			wantCode: http.StatusUnavailableForLegalReasons,
+			wantBody: errorTemplateBody(http.StatusUnavailableForLegalReasons),
+		},
+		"451 unavailable for legal reasons - jw": {
+			method:   ejw.UnavailableForLegalReasons,
+			wantCode: http.StatusUnavailableForLegalReasons,
+			wantBody: `{"error":"Unavailable For Legal Reasons"}`,
+		},
+		"500 internal server error - tw": {
 			method:   etw.InternalServerError,
 			wantCode: http.StatusInternalServerError,
 			wantBody: errorTemplateBody(http.StatusInternalServerError),
 		},
-		"internal server error - jw": {
+		"500 internal server error - jw": {
 			method:   ejw.InternalServerError,
 			wantCode: http.StatusInternalServerError,
 			wantBody: `{"error":"Internal Server Error"}`,
@@ -198,7 +368,7 @@ func TestReplyOrError(t *testing.T) {
 			wantCode: http.StatusInternalServerError,
 			wantBody: `{"error":"json: unsupported type: chan int"}`,
 		},
-		"ok jw": {
+		"ok - jw": {
 			reply:    Engine{Writer: NewJSONWriter()},
 			code:     http.StatusOK,
 			wantCode: http.StatusOK,
@@ -240,33 +410,33 @@ func TestGenericReplies(t *testing.T) {
 		wantCode   int
 		wantBody   string
 	}{
-		"ok - tw": {
+		"200 ok - tw": {
 			methodOpts: rtw.OK,
 			wantCode:   http.StatusOK,
 			wantBody:   "Hello, Sherlock",
 		},
-		"ok - jw": {
+		"200 ok - jw": {
 			methodOpts: ejw.OK,
 			wantCode:   http.StatusOK,
 			wantBody:   `{"name":"Sherlock"}`,
 		},
-		"created - tw": {
+		"201 created - tw": {
 			methodOpts: rtw.Created,
 			wantCode:   http.StatusCreated,
 			wantBody:   "Hello, Sherlock",
 		},
-		"created - jw": {
+		"201 created - jw": {
 			methodOpts: ejw.Created,
 			wantCode:   http.StatusCreated,
 			wantBody:   `{"name":"Sherlock"}`,
 		},
-		"no content - tw": {
+		"204 no content - tw": {
 			noOpts:   true,
 			method:   rtw.NoContent,
 			wantCode: http.StatusNoContent,
 			wantBody: "",
 		},
-		"no content - jw": {
+		"204 no content - jw": {
 			noOpts:   true,
 			method:   ejw.NoContent,
 			wantCode: http.StatusNoContent,

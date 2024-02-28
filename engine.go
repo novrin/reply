@@ -53,6 +53,11 @@ func (e Engine) NotAcceptable(w http.ResponseWriter) {
 	e.Error(w, http.StatusText(http.StatusNotAcceptable), http.StatusNotAcceptable)
 }
 
+// ProxyAuthRequired replies with HTTP Status 407 Proxy Authentication Required.
+func (e Engine) ProxyAuthRequired(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusProxyAuthRequired), http.StatusProxyAuthRequired)
+}
+
 // RequestTimeout replies with HTTP Status 408 Request Timeout.
 func (e Engine) RequestTimeout(w http.ResponseWriter) {
 	e.Error(w, http.StatusText(http.StatusRequestTimeout), http.StatusRequestTimeout)
@@ -68,14 +73,94 @@ func (e Engine) Gone(w http.ResponseWriter) {
 	e.Error(w, http.StatusText(http.StatusGone), http.StatusGone)
 }
 
+// LengthRequired replies with HTTP Status 411 Length Required.
+func (e Engine) LengthRequired(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusLengthRequired), http.StatusLengthRequired)
+}
+
+// PreconditionFailed replies with HTTP Status 412 Precondition Failed.
+func (e Engine) PreconditionFailed(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusPreconditionFailed), http.StatusPreconditionFailed)
+}
+
+// RequestEntityTooLarge replies with HTTP Status 413 Request Entity Too Large.
+func (e Engine) RequestEntityTooLarge(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusRequestEntityTooLarge), http.StatusRequestEntityTooLarge)
+}
+
+// RequestURITooLong replies with HTTP Status 414 Request URI Too Long.
+func (e Engine) RequestURITooLong(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusRequestURITooLong), http.StatusRequestURITooLong)
+}
+
+// UnsupportedMediaType replies with HTTP Status 415 Unsupported Media Type.
+func (e Engine) UnsupportedMediaType(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusUnsupportedMediaType), http.StatusUnsupportedMediaType)
+}
+
+// RequestedRangeNotSatisfiable replies with HTTP Status 416 Requested Range Not Satisfiable.
+func (e Engine) RequestedRangeNotSatisfiable(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusRequestedRangeNotSatisfiable), http.StatusRequestedRangeNotSatisfiable)
+}
+
+// ExpectationFailed replies with HTTP Status 417 Expectation Failed.
+func (e Engine) ExpectationFailed(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusExpectationFailed), http.StatusExpectationFailed)
+}
+
+// Teapot replies with HTTP Status 418 I'm a teapot.
+func (e Engine) Teapot(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusTeapot), http.StatusTeapot)
+}
+
+// MisdirectedRequest replies with HTTP Status 421 Misdirected Request.
+func (e Engine) MisdirectedRequest(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusMisdirectedRequest), http.StatusMisdirectedRequest)
+}
+
 // UnprocessableEntity replies with HTTP Status 422 Unprocessable Entity.
 func (e Engine) UnprocessableEntity(w http.ResponseWriter) {
 	e.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
 }
 
+// Locked replies with HTTP Status 423 Locked.
+func (e Engine) Locked(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusLocked), http.StatusLocked)
+}
+
+// FailedDependency replies with HTTP Status 424 Failed Dependency.
+func (e Engine) FailedDependency(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusFailedDependency), http.StatusFailedDependency)
+}
+
+// TooEarly replies with HTTP Status 425 Too Early.
+func (e Engine) TooEarly(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusTooEarly), http.StatusTooEarly)
+}
+
+// UpgradeRequired replies with HTTP Status 426 Upgrade Required.
+func (e Engine) UpgradeRequired(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusUpgradeRequired), http.StatusUpgradeRequired)
+}
+
+// PreconditionRequired replies with HTTP Status 428 Precondition Required.
+func (e Engine) PreconditionRequired(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusPreconditionRequired), http.StatusPreconditionRequired)
+}
+
 // TooManyRequests replies with HTTP Status 429 Too Many Requests.
 func (e Engine) TooManyRequests(w http.ResponseWriter) {
 	e.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
+}
+
+// RequestHeaderFieldsTooLarge replies with HTTP Status 431 Request Header Fields Too Large.
+func (e Engine) RequestHeaderFieldsTooLarge(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusRequestHeaderFieldsTooLarge), http.StatusRequestHeaderFieldsTooLarge)
+}
+
+// UnavailableForLegalReasons replies with HTTP Status 451 Unavailable For Legal Reasons.
+func (e Engine) UnavailableForLegalReasons(w http.ResponseWriter) {
+	e.Error(w, http.StatusText(http.StatusUnavailableForLegalReasons), http.StatusUnavailableForLegalReasons)
 }
 
 // InternalServerError replies with HTTP Status 500 Internal Server Error.
