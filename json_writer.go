@@ -30,28 +30,24 @@ func (jw JSONWriter) WriteTo(w http.ResponseWriter) (int64, error) {
 	return jw.buffer.WriteTo(w)
 }
 
-// Error replies to the request with the given HTTP status code and its text
-// description in a JSON error key.
+// Error sends an HTTP response header with the given status code and writes an
+// encoded JSON error to w.
 func (jw JSONWriter) Error(w http.ResponseWriter, error string, code int) {
 	_ = jw.Encode(map[string]string{"error": error})
 	w.WriteHeader(code)
 	_, _ = jw.WriteTo(w)
 }
 
-// Write replies to a request with the given status code and opts Data encoded
-// to JSON. The encoding is first written to a buffer. If an error occurs, it
-// replies with an Internal Server Error. Otherwise, it writes the given status
-// code and the encoded data.
-func (jw JSONWriter) Reply(w http.ResponseWriter, code int, opts Options) {
+// Reply sends an HTTP status response header with the given status code and
+// writes encoded JSON to w using the opts provided. If an error occurs at
+// encoding, the function exits and does not write to w.
+func (jw JSONWriter) Reply(w http.ResponseWriter, code int, opts Options) error {
 	if err := jw.Encode(opts.Data); err != nil {
-		message := err.Error()
-		if !opts.Debug {
-			message = http.StatusText(http.StatusInternalServerError)
-		}
-		jw.Error(w, message, http.StatusInternalServerError)
+		return err
 	}
 	w.WriteHeader(code)
 	_, _ = jw.WriteTo(w)
+	return nil
 }
 
 // NewJSONWriter returns a new JSONWriter with an empty buffer.

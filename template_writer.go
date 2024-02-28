@@ -69,9 +69,9 @@ func (tw *TemplateWriter) WriteTo(w http.ResponseWriter) (int64, error) {
 	return tw.buffer.WriteTo(w)
 }
 
-// Error replies to a request with tw's "error.html" template, given error
-// message, and HTTP code. It does not otherwise end the request; the caller
-// should ensure no further writes are done to w.
+// Error sends an HTTP response header with the given status code and writes
+// tw's executed "error.html" template to w. It does not otherwise end the
+// request; the caller should ensure no further writes are done to w.
 func (tw *TemplateWriter) Error(w http.ResponseWriter, error string, code int) {
 	_ = tw.Execute("error.html", struct{ Error string }{Error: error})
 	w.WriteHeader(code)
@@ -80,11 +80,6 @@ func (tw *TemplateWriter) Error(w http.ResponseWriter, error string, code int) {
 
 // Options represents fields used in Reply.
 type Options struct {
-	// Debug defines whether transparent error strings encountered in Reply are
-	// sent in responses. If debug is false, the error message will simply be
-	// the text representation of the error code.
-	Debug bool
-
 	// Key defines a lookup in an TemplateWriter's Templates. This is always
 	// required for a TemplateWriter; if not supplied, its Reply will write an
 	// Internal Server Error.
@@ -97,10 +92,10 @@ type Options struct {
 	Data any
 }
 
-// Reply executes templates according to the given options. If an error occurs
-// at any point in the process, it replies to the request with an Internal
-// Server Error. The transparency of the errors are denoted by opts.Debug.
-func (tw *TemplateWriter) Reply(w http.ResponseWriter, code int, opts Options) {
+// Reply sends an HTTP status response header with the given status code and
+// writes an executed template to w using the opts provided. If an error occurs
+// at template execution, the function exits and does not write to w.
+func (tw *TemplateWriter) Reply(w http.ResponseWriter, code int, opts Options) error {
 	var err error
 	if opts.Name != "" {
 		err = tw.ExecuteTemplate(opts.Key, opts.Name, opts.Data)
@@ -108,15 +103,11 @@ func (tw *TemplateWriter) Reply(w http.ResponseWriter, code int, opts Options) {
 		err = tw.Execute(opts.Key, opts.Data)
 	}
 	if err != nil {
-		message := err.Error()
-		if !opts.Debug {
-			message = http.StatusText(http.StatusInternalServerError)
-		}
-		tw.Error(w, message, http.StatusInternalServerError)
-		return
+		return err
 	}
 	w.WriteHeader(code)
 	_, _ = tw.WriteTo(w)
+	return nil
 }
 
 // NewTemplateWriter returns a new TemplateWriter with the given templates and
@@ -130,7 +121,10 @@ func NewTemplateWriter(templates map[string]*template.Template) *TemplateWriter 
 	if _, ok := templates["no_content.html"]; !ok {
 		templates["no_content.html"] = template.Must(template.New("no_content.html").Parse(NoContentHTML))
 	}
-	return &TemplateWriter{Templates: templates, buffer: new(bytes.Buffer)}
+	return &TemplateWriter{
+		Templates: templates,
+		buffer:    new(bytes.Buffer),
+	}
 }
 
 // TemplateMap returns a map of string to HTML template using fsys as its source.

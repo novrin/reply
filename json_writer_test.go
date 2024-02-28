@@ -39,14 +39,14 @@ func TestEncode(t *testing.T) {
 			w := httptest.NewRecorder()
 			err := jw.Encode(c.data)
 			if err != nil && !c.wantErr {
-				t.Fatalf("got unwanted error - %s", err)
+				t.Errorf("got unwanted error - %s", err)
 			}
 			if err == nil && c.wantErr {
-				t.Fatal("wanted an error but didn't get one")
+				t.Error("wanted an error but didn't get one")
 			}
 			jw.WriteTo(w)
 			if got := strings.TrimSpace(w.Body.String()); got != c.wantBody {
-				t.Fatalf(errorString, got, c.wantBody)
+				t.Errorf(errorString, got, c.wantBody)
 			}
 		})
 	}
@@ -72,10 +72,10 @@ func TestJSONError(t *testing.T) {
 			w := httptest.NewRecorder()
 			jw.Error(w, http.StatusText(c.code), c.code)
 			if got := w.Code; got != c.code {
-				t.Fatalf(errorString, got, c.code)
+				t.Errorf(errorString, got, c.code)
 			}
 			if got := strings.TrimSpace(w.Body.String()); got != c.want {
-				t.Fatalf(errorString, got, c.want)
+				t.Errorf(errorString, got, c.want)
 			}
 		})
 	}
@@ -85,14 +85,16 @@ func TestJSONReply(t *testing.T) {
 	cases := map[string]struct {
 		code     int
 		opts     Options
+		wantErr  bool
 		wantCode int
 		wantBody string
 	}{
 		"error - fail encode": {
 			code:     http.StatusOK,
 			opts:     Options{Data: map[string]interface{}{"foo": make(chan int)}},
-			wantCode: http.StatusInternalServerError,
-			wantBody: `{"error":"Internal Server Error"}`,
+			wantErr:  true,
+			wantCode: http.StatusOK,
+			wantBody: "",
 		},
 		"ok": {
 			code:     http.StatusOK,
@@ -111,12 +113,15 @@ func TestJSONReply(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			jw.Reply(w, c.code, c.opts)
+			err := jw.Reply(w, c.code, c.opts)
+			if (err != nil) != c.wantErr {
+				t.Errorf(errorString, err, c.wantErr)
+			}
 			if got := w.Code; got != c.wantCode {
-				t.Fatalf(errorString, got, c.wantCode)
+				t.Errorf(errorString, got, c.wantCode)
 			}
 			if got := strings.TrimSpace(w.Body.String()); !strings.Contains(got, c.wantBody) {
-				t.Fatalf(errorString, got, c.wantBody)
+				t.Errorf(errorString, got, c.wantBody)
 			}
 		})
 	}

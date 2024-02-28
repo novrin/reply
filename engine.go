@@ -12,12 +12,16 @@ import (
 type Writer interface {
 	WriteTo(w http.ResponseWriter) (int64, error)
 	Error(w http.ResponseWriter, error string, code int)
-	Reply(w http.ResponseWriter, code int, opts Options)
+	Reply(w http.ResponseWriter, code int, opts Options) error
 }
 
 // Engine provides convenience reply methods by wrapping its embedded Writer's
 // Error and Reply.
 type Engine struct {
+	// Debug defines whether error strings encountered in the Writer's Reply are
+	// sent in responses. If debug is false, the error string will simply be the
+	// plain text representation of the error code.
+	Debug bool
 	Writer
 }
 
@@ -55,17 +59,31 @@ func (e Engine) InternalServerError(w http.ResponseWriter, err error) {
 	e.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
+// ReplyOrError wraps Reply with error debugging - if an error is encountered in
+// Reply, the Writer's Error function is triggered. Error essages are replaced
+// with 'Internal Server Error' if e.Debug is false.
+func (e Engine) ReplyOrError(w http.ResponseWriter, code int, opts Options) {
+	if err := e.Reply(w, code, opts); err != nil {
+		code = http.StatusInternalServerError
+		if !e.Debug {
+			e.Error(w, http.StatusText(code), code)
+		} else {
+			e.Error(w, err.Error(), code)
+		}
+	}
+}
+
 // OK replies with an HTTP 200 Status OK.
 func (e Engine) OK(w http.ResponseWriter, opts Options) {
-	e.Reply(w, http.StatusOK, opts)
+	e.ReplyOrError(w, http.StatusOK, opts)
 }
 
 // Created replies with an HTTP 201 Status Created.
 func (e Engine) Created(w http.ResponseWriter, opts Options) {
-	e.Reply(w, http.StatusCreated, opts)
+	e.ReplyOrError(w, http.StatusCreated, opts)
 }
 
 // NoContent replies with an HTTP Status 204 No Content.
 func (e Engine) NoContent(w http.ResponseWriter) {
-	e.Reply(w, http.StatusNoContent, Options{Key: "no_content.html"})
+	e.ReplyOrError(w, http.StatusNoContent, Options{Key: "no_content.html"})
 }
