@@ -40,17 +40,17 @@ func TestNewTemplateWriter(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			tw := NewTemplateWriter(c.templates)
 			if got := len(tw.Templates); got != len(c.want) {
-				t.Fatalf(errorString, got, c.want)
+				t.Errorf(errorString, got, c.want)
 			}
 			for _, key := range c.want {
 				if _, ok := tw.Templates[key]; !ok {
-					t.Fatalf("absent key '%s' in writer templates", key)
+					t.Errorf("absent key '%s' in writer templates", key)
 				}
 			}
 			w := httptest.NewRecorder()
 			tw.WriteTo(w)
 			if got, want := w.Body.String(), ""; got != want {
-				t.Fatalf(errorString, got, want)
+				t.Errorf(errorString, got, want)
 			}
 		})
 	}
@@ -67,7 +67,7 @@ func TestExecute(t *testing.T) {
 			wantErr:  true,
 			wantBody: "",
 		},
-		"error - buffer execute failed": {
+		"error - template execute failed": {
 			key:      "baz",
 			wantErr:  true,
 			wantBody: "",
@@ -84,14 +84,14 @@ func TestExecute(t *testing.T) {
 			w := httptest.NewRecorder()
 			err := tw.Execute(c.key, struct{ Error string }{Error: "qux"})
 			if err != nil && !c.wantErr {
-				t.Fatalf("got unwanted error - %s", err)
+				t.Errorf("got unwanted error - %s", err)
 			}
 			if err == nil && c.wantErr {
-				t.Fatal("wanted an error but didn't get one")
+				t.Error("wanted an error but didn't get one")
 			}
 			tw.WriteTo(w)
 			if got := w.Body.String(); got != c.wantBody {
-				t.Fatalf(errorString, got, c.wantBody)
+				t.Errorf(errorString, got, c.wantBody)
 			}
 		})
 	}
@@ -125,14 +125,14 @@ func TestExecuteTemplate(t *testing.T) {
 			w := httptest.NewRecorder()
 			err := tw.ExecuteTemplate(c.key, "base", struct{}{})
 			if err != nil && !c.wantErr {
-				t.Fatalf("got unwanted error - %s", err)
+				t.Errorf("got unwanted error - %s", err)
 			}
 			if err == nil && c.wantErr {
-				t.Fatal("wanted an error but didn't get one")
+				t.Error("wanted an error but didn't get one")
 			}
 			tw.WriteTo(w)
 			if got := w.Body.String(); got != c.wantBody {
-				t.Fatalf(errorString, got, c.wantBody)
+				t.Errorf(errorString, got, c.wantBody)
 			}
 		})
 	}
@@ -150,11 +150,11 @@ func TestTemplateError(t *testing.T) {
 			body := http.StatusText(code)
 			tw.Error(w, body, code)
 			if got := w.Code; got != code {
-				t.Fatalf(errorString, got, code)
+				t.Errorf(errorString, got, code)
 			}
 			want := fmt.Sprintf("<p>%s</p>", body)
 			if got := w.Body.String(); got != want {
-				t.Fatalf(errorString, got, "")
+				t.Errorf(errorString, got, "")
 			}
 		})
 	}
@@ -165,6 +165,7 @@ func TestTemplateReply(t *testing.T) {
 		writer   Writer
 		code     int
 		opts     Options
+		wantErr  bool
 		wantCode int
 		wantBody string
 	}{
@@ -172,15 +173,17 @@ func TestTemplateReply(t *testing.T) {
 			writer:   NewTemplateWriter(map[string]*template.Template{}),
 			code:     http.StatusOK,
 			opts:     Options{},
-			wantCode: http.StatusInternalServerError,
-			wantBody: "<p>Internal Server Error</p>",
+			wantErr:  true,
+			wantCode: http.StatusOK,
+			wantBody: "",
 		},
 		"error - no such template": {
 			writer:   NewTemplateWriter(map[string]*template.Template{}),
 			code:     http.StatusOK,
 			opts:     Options{Key: "foo"},
-			wantCode: http.StatusInternalServerError,
-			wantBody: "<p>Internal Server Error</p>",
+			wantErr:  true,
+			wantCode: http.StatusOK,
+			wantBody: "",
 		},
 		"template key ok; name nil": {
 			writer:   NewTemplateWriter(map[string]*template.Template{"quux": quux}),
@@ -193,8 +196,9 @@ func TestTemplateReply(t *testing.T) {
 			writer:   NewTemplateWriter(map[string]*template.Template{"foo": foo}),
 			code:     http.StatusOK,
 			opts:     Options{Key: "foo", Name: "bass"},
-			wantCode: http.StatusInternalServerError,
-			wantBody: "<p>Internal Server Error</p>",
+			wantErr:  true,
+			wantCode: http.StatusOK,
+			wantBody: "",
 		},
 		"template key ok; name ok": {
 			writer: NewTemplateWriter(map[string]*template.Template{"foo": foo}),
@@ -215,8 +219,9 @@ func TestTemplateReply(t *testing.T) {
 				Name: "base",
 				Data: struct{ Mame string }{Mame: "Sherlock"},
 			},
-			wantCode: http.StatusInternalServerError,
-			wantBody: "<p>Internal Server Error</p>",
+			wantErr:  true,
+			wantCode: http.StatusOK,
+			wantBody: "",
 		},
 		"template key ok; name ok; data ok": {
 			writer: NewTemplateWriter(map[string]*template.Template{"foo": foo}),
@@ -233,12 +238,15 @@ func TestTemplateReply(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			c.writer.Reply(w, c.code, c.opts)
+			err := c.writer.Reply(w, c.code, c.opts)
+			if (err != nil) != c.wantErr {
+				t.Errorf(errorString, err, c.wantErr)
+			}
 			if got := w.Code; got != c.wantCode {
-				t.Fatalf(errorString, got, c.wantCode)
+				t.Errorf(errorString, got, c.wantCode)
 			}
 			if got := strings.TrimSpace(w.Body.String()); got != c.wantBody {
-				t.Fatalf(errorString, got, c.wantBody)
+				t.Errorf(errorString, got, c.wantBody)
 			}
 		})
 	}
@@ -289,14 +297,14 @@ func TestTemplateMap(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			pages, err := TemplateMap(c.fsys, c.src, c.base, funcs)
 			if (err != nil) != c.wantErr {
-				t.Fatalf(errorString, err, c.wantErr)
+				t.Errorf(errorString, err, c.wantErr)
 			}
 			if got := len(pages); got != c.wantLen {
-				t.Fatalf(errorString, got, c.wantLen)
+				t.Errorf(errorString, got, c.wantLen)
 			}
 			for _, key := range c.wantKeys {
 				if _, ok := pages[key]; !ok {
-					t.Fatal("wanted 'hello.html' in pages")
+					t.Error("wanted 'hello.html' in pages")
 				}
 			}
 		})

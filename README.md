@@ -35,10 +35,6 @@ type Application struct {
 
 // Home renders the home template.
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		app.reply.MethodNotAllowed(w, http.MethodGet)
-		return
-	}
 	if r.URL.Path != "/" {
 		app.reply.NotFound(w)
 		return
