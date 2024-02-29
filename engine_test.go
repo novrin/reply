@@ -15,7 +15,7 @@ func errorTemplateBody(code int) string {
 
 func TestGenericErrors(t *testing.T) {
 	etw := Engine{Writer: NewTemplateWriter(map[string]*template.Template{})}
-	ejw := Engine{Writer: NewJSONWriter()}
+	ejw := Engine{Writer: JSONWriter{}}
 	cases := map[string]struct {
 		method   func(http.ResponseWriter)
 		wantCode int
@@ -418,7 +418,7 @@ func TestGenericErrors(t *testing.T) {
 
 func TestReplyOrError(t *testing.T) {
 	etw := Engine{Writer: NewTemplateWriter(map[string]*template.Template{})}
-	ejw := Engine{Writer: NewJSONWriter()}
+	ejw := Engine{Writer: JSONWriter{}}
 	cases := map[string]struct {
 		reply    Engine
 		code     int
@@ -452,14 +452,14 @@ func TestReplyOrError(t *testing.T) {
 			wantBody: `{"error":"Internal Server Error"}`,
 		},
 		"error fail encode, debug true - jw": {
-			reply:    Engine{Writer: NewJSONWriter(), Debug: true},
+			reply:    Engine{Writer: JSONWriter{}, Debug: true},
 			code:     http.StatusOK,
 			opts:     Options{Data: map[string]interface{}{"foo": make(chan int)}},
 			wantCode: http.StatusInternalServerError,
 			wantBody: `{"error":"json: unsupported type: chan int"}`,
 		},
 		"ok - jw": {
-			reply:    Engine{Writer: NewJSONWriter()},
+			reply:    Engine{Writer: JSONWriter{}},
 			code:     http.StatusOK,
 			wantCode: http.StatusOK,
 			wantBody: `{"name":"Sherlock"}`,
@@ -470,8 +470,8 @@ func TestReplyOrError(t *testing.T) {
 			w := httptest.NewRecorder()
 			if c.opts == (Options{}) {
 				c.opts = Options{
-					Key:  "foo",
-					Name: "base",
+					TemplateKey:  "foo",
+					TemplateName: "base",
 					Data: struct {
 						Name string `json:"name"`
 					}{
@@ -492,7 +492,7 @@ func TestReplyOrError(t *testing.T) {
 
 func TestGenericReplies(t *testing.T) {
 	rtw := Engine{Writer: NewTemplateWriter(map[string]*template.Template{"foo": foo})}
-	ejw := Engine{Writer: NewJSONWriter()}
+	ejw := Engine{Writer: JSONWriter{}}
 	cases := map[string]struct {
 		noOpts     bool
 		methodOpts func(http.ResponseWriter, Options)
@@ -540,8 +540,8 @@ func TestGenericReplies(t *testing.T) {
 				c.method(w)
 			} else {
 				c.methodOpts(w, Options{
-					Key:  "foo",
-					Name: "base",
+					TemplateKey:  "foo",
+					TemplateName: "base",
 					Data: struct {
 						Name string `json:"name"`
 					}{
