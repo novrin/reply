@@ -6,17 +6,16 @@ import (
 
 // Writer is used by an Engine to construct replies to HTTP server requests.
 type Writer interface {
-	WriteTo(w http.ResponseWriter) (int64, error)
 	Error(w http.ResponseWriter, error string, code int)
 	Reply(w http.ResponseWriter, code int, opts Options) error
 }
 
-// Engine provides convenience reply methods by wrapping its embedded Writer's
-// Error and Reply.
+// Engine provides convenience reply methods by
+// wrapping its embedded Writer's Error and Reply.
 type Engine struct {
-	// Debug defines whether error strings encountered in the Writer's Reply are
-	// sent in responses. If debug is false, the error string will simply be the
-	// plain text representation of the error code.
+	// Debug defines whether error strings encountered in the Writer's Reply
+	// are sent in responses. If debug is false, the error string will simply
+	// be the plain text representation of the error code.
 	Debug bool
 
 	// Writer is an interface used to construct replies to HTTP server requests.
@@ -239,5 +238,5 @@ func (e Engine) Created(w http.ResponseWriter, opts Options) {
 
 // NoContent replies with HTTP Status 204 No Content.
 func (e Engine) NoContent(w http.ResponseWriter) {
-	e.ReplyOrError(w, http.StatusNoContent, Options{Key: "no_content.html"})
+	e.ReplyOrError(w, http.StatusNoContent, Options{TemplateKey: "no_content.html"})
 }

@@ -9,86 +9,23 @@ import (
 	"path/filepath"
 )
 
-var (
-	// errorHTML is the HTML content for the error.html template. It is
-	// used in NewTemplateWriter as a default if the given templates map does
-	// not contain the key "error.html".
-	errorHTML string = `<p>{{.Error}}</p>`
-
-	// NoContentHTML is blank HTML content for the no_content.html template. It
-	// is used in NewTemplateWriter to supply a default "no_content.html"
-	// template if absent in the templates map.
-	NoContentHTML string = ""
-)
-
 // Template writer implements Writer for template responses.
 type TemplateWriter struct {
 	Templates map[string]*template.Template
-	buffer    *bytes.Buffer
-}
-
-// Execute applies the template mapped to key to the given data object, writing
-// the output to tw's buffer. If an error occurs executing the template or
-// writing its output, execution stops, the buffer is reset, and the error is
-// returned. It is called in Reply to prevent partial HTML responses if an
-// error occurs.
-func (tw *TemplateWriter) Execute(key string, data any) error {
-	template, ok := tw.Templates[key]
-	if !ok {
-		return fmt.Errorf("no such template '%s'", key)
-	}
-	if err := template.Execute(tw.buffer, data); err != nil {
-		tw.buffer.Reset()
-		return err
-	}
-	return nil
-}
-
-// ExecuteTemplate applies the template mapped to key that has the given name to
-// the given data object and writes the output to tw's buffer. If an error
-// occurs executing the template or writing its output, execution stops, the
-// buffer is reset, and the error is returned. It is called in Reply to prevent
-// partial HTML responses if an error occurs.
-func (tw *TemplateWriter) ExecuteTemplate(key string, name string, data any) error {
-	template, ok := tw.Templates[key]
-	if !ok {
-		return fmt.Errorf("no such template '%s'", key)
-	}
-	if err := template.ExecuteTemplate(tw.buffer, name, data); err != nil {
-		tw.buffer.Reset()
-		return err
-	}
-	return nil
-}
-
-// WriteTo writes data to w until tw's buffer is drained or an error occurs.
-// Any values returned by the buffer's WriteTo are returned.
-func (tw *TemplateWriter) WriteTo(w http.ResponseWriter) (int64, error) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	return tw.buffer.WriteTo(w)
-}
-
-// Error sends an HTTP response header with the given status code and writes
-// tw's executed "error.html" template to w. It does not otherwise end the
-// request; the caller should ensure no further writes are done to w.
-func (tw *TemplateWriter) Error(w http.ResponseWriter, error string, code int) {
-	_ = tw.Execute("error.html", struct{ Error string }{Error: error})
-	w.WriteHeader(code)
-	_, _ = tw.WriteTo(w)
 }
 
 // Options represents fields used in Reply.
 type Options struct {
-	// Key defines a lookup in an TemplateWriter's Templates. This is always
-	// required for a TemplateWriter; if not supplied, its Reply will write an
-	// Internal Server Error.
-	Key string
+	// TemplateKey defines a lookup in an TemplateWriter's Templates.
+	// This is always required for a TemplateWriter; if not supplied,
+	// its Reply will write an Internal Server Error.
+	TemplateKey string
 
-	// Name defines an optional named template to execute.
-	Name string
+	// TemplateName defines an optional named template to execute.
+	// This optional even for a TemplateWriter.
+	TemplateName string
 
-	// Data defines data for use in a TemplateWriter's Execution or JSON output.
+	// Data defines data for use in a reply.
 	Data any
 }
 
@@ -96,35 +33,50 @@ type Options struct {
 // writes an executed template to w using the opts provided. If an error occurs
 // at template execution, the function exits and does not write to w.
 func (tw *TemplateWriter) Reply(w http.ResponseWriter, code int, opts Options) error {
-	var err error
-	if opts.Name != "" {
-		err = tw.ExecuteTemplate(opts.Key, opts.Name, opts.Data)
-	} else {
-		err = tw.Execute(opts.Key, opts.Data)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	tmpl, ok := tw.Templates[opts.TemplateKey]
+	if !ok {
+		return fmt.Errorf("no such template '%s'", opts.TemplateKey)
 	}
-	if err != nil {
-		return err
+	buf := new(bytes.Buffer)
+	if opts.TemplateName != "" {
+		if err := tmpl.ExecuteTemplate(buf, opts.TemplateName, opts.Data); err != nil {
+			return err
+		}
+	} else {
+		if err := tmpl.Execute(buf, opts.Data); err != nil {
+			return err
+		}
 	}
 	w.WriteHeader(code)
-	_, _ = tw.WriteTo(w)
+	_, _ = buf.WriteTo(w)
 	return nil
+}
+
+// Error sends an HTTP response header with the given status code and writes
+// tw's executed "error.html" template to w. It does not otherwise end the
+// request; the caller should ensure no further writes are done to w.
+func (tw *TemplateWriter) Error(w http.ResponseWriter, error string, code int) {
+	_ = tw.Reply(w, code, Options{
+		TemplateKey: "error.html",
+		Data:        struct{ Error string }{Error: error},
+	})
 }
 
 // NewTemplateWriter returns a new TemplateWriter with the given templates and
 // an empty buffer. If no "error.html" or "no_content.html" are supplied in
-// templates, the default HTML provided in vars errorHTML and NoContentHTML are
-// parsed and used.
+// templates, defaults are parsed and used.
 func NewTemplateWriter(templates map[string]*template.Template) *TemplateWriter {
 	if _, ok := templates["error.html"]; !ok {
-		templates["error.html"] = template.Must(template.New("error.html").Parse(errorHTML))
+		templates["error.html"] = template.
+			Must(template.New("error.html").Parse("<p>{{.Error}}</p>"))
 	}
 	if _, ok := templates["no_content.html"]; !ok {
-		templates["no_content.html"] = template.Must(template.New("no_content.html").Parse(NoContentHTML))
+		templates["no_content.html"] = template.
+			Must(template.New("no_content.html").Parse(""))
 	}
-	return &TemplateWriter{
-		Templates: templates,
-		buffer:    new(bytes.Buffer),
-	}
+	return &TemplateWriter{Templates: templates}
 }
 
 // TemplateMap returns a map of string to HTML template using fsys as its source.
